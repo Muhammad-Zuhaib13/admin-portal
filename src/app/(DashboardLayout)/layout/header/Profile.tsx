@@ -1,5 +1,6 @@
+"use client";
+
 import React, { useState } from "react";
-import Link from "next/link";
 import {
   Avatar,
   Box,
@@ -9,29 +10,58 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  CircularProgress,
 } from "@mui/material";
-
-import { IconListCheck, IconMail, IconUser } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/app/lib/supabase";
+import { IconUser, IconLogout } from "@tabler/icons-react";
 
 const Profile = () => {
-  const [anchorEl2, setAnchorEl2] = useState(null);
-  const handleClick2 = (event: any) => {
+  const [anchorEl2, setAnchorEl2] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleClick2 = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl2(event.currentTarget);
   };
+
   const handleClose2 = () => {
     setAnchorEl2(null);
+  };
+
+  const handleLogout = async () => {
+    setLoading(true);
+    try {
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Clear storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Wait a bit for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Force reload and redirect
+      window.location.assign("/authentication/login");
+      
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Force redirect even on error
+      window.location.assign("/authentication/login");
+    }
   };
 
   return (
     <Box>
       <IconButton
         size="large"
-        aria-label="show 11 new notifications"
+        aria-label="profile menu"
         color="inherit"
-        aria-controls="msgs-menu"
+        aria-controls="profile-menu"
         aria-haspopup="true"
         sx={{
-          ...(typeof anchorEl2 === "object" && {
+          ...(anchorEl2 && {
             color: "primary.main",
           }),
         }}
@@ -39,18 +69,16 @@ const Profile = () => {
       >
         <Avatar
           src="/images/profile/user-1.jpg"
-          alt="image"
+          alt="User Avatar"
           sx={{
             width: 35,
             height: 35,
           }}
         />
       </IconButton>
-      {/* ------------------------------------------- */}
-      {/* Message Dropdown */}
-      {/* ------------------------------------------- */}
+      
       <Menu
-        id="msgs-menu"
+        id="profile-menu"
         anchorEl={anchorEl2}
         keepMounted
         open={Boolean(anchorEl2)}
@@ -67,29 +95,19 @@ const Profile = () => {
           <ListItemIcon>
             <IconUser width={20} />
           </ListItemIcon>
-          <ListItemText>My Profile</ListItemText>
+          <ListItemText>Admin</ListItemText>
         </MenuItem>
-        <MenuItem>
-          <ListItemIcon>
-            <IconMail width={20} />
-          </ListItemIcon>
-          <ListItemText>My Account</ListItemText>
-        </MenuItem>
-        <MenuItem>
-          <ListItemIcon>
-            <IconListCheck width={20} />
-          </ListItemIcon>
-          <ListItemText>My Tasks</ListItemText>
-        </MenuItem>
+        
         <Box mt={1} py={1} px={2}>
           <Button
-            href="/authentication/login"
+            onClick={handleLogout}
             variant="outlined"
             color="primary"
-            component={Link}
             fullWidth
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={16} /> : <IconLogout width={16} />}
           >
-            Logout
+            {loading ? "Logging out..." : "Logout"}
           </Button>
         </Box>
       </Menu>

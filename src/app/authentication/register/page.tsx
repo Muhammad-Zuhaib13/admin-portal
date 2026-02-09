@@ -4,7 +4,7 @@ import Link from "next/link";
 import PageContainer from "@/app/(DashboardLayout)/components/container/PageContainer";
 import Logo from "@/app/(DashboardLayout)/layout/shared/logo/Logo";
 import AuthRegister from "../auth/AuthRegister";
-
+import AuthRegistrationForm from "@/app/(DashboardLayout)/components/forms/theme-elements/AuthRegistrationForm";
 const Register2 = () => (
   <PageContainer title="Register" description="this is Register page">
     <Box
@@ -45,7 +45,7 @@ const Register2 = () => (
             <Box display="flex" alignItems="center" justifyContent="center">
               <Logo />
             </Box>
-            <AuthRegister
+            <AuthRegistrationForm
               subtext={
                 <Typography
                   variant="subtitle1"
@@ -53,7 +53,7 @@ const Register2 = () => (
                   color="textSecondary"
                   mb={1}
                 >
-                  Your Social Campaigns
+                  Create your account
                 </Typography>
               }
               subtitle={

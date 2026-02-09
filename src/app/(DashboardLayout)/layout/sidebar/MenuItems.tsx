@@ -6,6 +6,8 @@ import {
   IconMoodHappy,
   IconTypography,
   IconUserPlus,
+  IconPencilPlus,
+  IconListCheck,
 } from "@tabler/icons-react";
 
 import { uniqueId } from "lodash";
@@ -21,6 +23,18 @@ const Menuitems = [
     title: "Dashboard",
     icon: IconLayoutDashboard,
     href: "/",
+  },
+  {
+    id: uniqueId(),
+    title: "Create Blog",
+    icon: IconPencilPlus,
+    href: "/create-blog",
+  },
+  {
+    id: uniqueId(),
+    title: "Created Blogs",
+    icon: IconListCheck,
+    href: "/created-blogs",
   },
   {
     navlabel: true,

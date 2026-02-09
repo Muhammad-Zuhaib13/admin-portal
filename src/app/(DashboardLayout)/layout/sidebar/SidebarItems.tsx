@@ -78,9 +78,7 @@ const SidebarItems = () => {
         <Logo img='/images/logos/dark-logo.svg' component={Link} to="/" >Modernize</Logo>
 
         {renderMenuItems(Menuitems, pathDirect)}
-        <Box px={2}>
-          <Upgrade />
-        </Box>
+        
       </MUI_Sidebar>
 
     </>

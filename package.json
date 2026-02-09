@@ -16,11 +16,13 @@
     "@mui/icons-material": "^7.3.5",
     "@mui/lab": "^7.0.1-beta.19",
     "@mui/material": "^7.3.5",
+    "@supabase/supabase-js": "^2.95.3",
     "@tabler/icons-react": "^3.35.0",
     "@types/node": "^24.10.1",
     "apexcharts": "5.3.6",
     "eslint": "9.39.1",
     "eslint-config-next": "16.1.0",
+    "formik": "^2.4.9",
     "lodash": "^4.17.21",
     "next": "16.1.0",
     "react": "^19.2.0",
@@ -28,7 +30,8 @@
     "react-dom": "^19.2.0",
     "react-mui-sidebar": "^1.6.10",
     "react-syntax-highlighter": "^16.1.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@types/lodash": "4.17.20",

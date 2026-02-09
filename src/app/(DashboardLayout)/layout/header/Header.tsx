@@ -1,20 +1,62 @@
-import React from 'react';
-import { Box, AppBar, Toolbar, styled, Stack, IconButton, Badge, Button } from '@mui/material';
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { 
+  Box, 
+  AppBar, 
+  Toolbar, 
+  styled, 
+  Stack, 
+  IconButton, 
+  Badge, 
+  Button,
+  CircularProgress 
+} from '@mui/material';
 import PropTypes from 'prop-types';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/app/lib/supabase';
 // components
 import Profile from './Profile';
 import { IconBellRinging, IconMenu } from '@tabler/icons-react';
 
 interface ItemType {
-  toggleMobileSidebar:  (event: React.MouseEvent<HTMLElement>) => void;
+  toggleMobileSidebar: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
-const Header = ({toggleMobileSidebar}: ItemType) => {
+const Header = ({ toggleMobileSidebar }: ItemType) => {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-  // const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
-  // const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
+      } catch (error) {
+        console.error('Error checking user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null);
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLoginClick = () => {
+    router.push('/authentication/login');
+  };
 
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
     boxShadow: 'none',
@@ -25,6 +67,7 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
       minHeight: '70px',
     },
   }));
+
   const ToolbarStyled = styled(Toolbar)(({ theme }) => ({
     width: '100%',
     color: theme.palette.text.secondary,
@@ -33,6 +76,7 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
   return (
     <AppBarStyled position="sticky" color="default">
       <ToolbarStyled>
+        {/* Mobile Menu Button */}
         <IconButton
           color="inherit"
           aria-label="menu"
@@ -47,25 +91,44 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
           <IconMenu width="20" height="20" />
         </IconButton>
 
+        {/* Notifications */}
+        {user && (
+          <IconButton
+            size="large"
+            aria-label="show 11 new notifications"
+            color="inherit"
+            aria-controls="msgs-menu"
+            aria-haspopup="true"
+          >
+            <Badge variant="dot" color="primary">
+              <IconBellRinging size="21" stroke="1.5" />
+            </Badge>
+          </IconButton>
+        )}
 
-        <IconButton
-          size="large"
-          aria-label="show 11 new notifications"
-          color="inherit"
-          aria-controls="msgs-menu"
-          aria-haspopup="true"
-        >
-          <Badge variant="dot" color="primary">
-            <IconBellRinging size="21" stroke="1.5" />
-          </Badge>
-
-        </IconButton>
         <Box flexGrow={1} />
+
         <Stack spacing={1} direction="row" alignItems="center">
-          <Button variant="contained" component={Link} href="/authentication/login"   disableElevation color="primary" >
-            Login
-          </Button>
-          <Profile />
+          {loading ? (
+            <CircularProgress size={24} />
+          ) : !user ? (
+            <Button 
+              variant="contained" 
+              onClick={handleLoginClick}
+              disableElevation 
+              color="primary"
+            >
+              Login
+            </Button>
+          ) : (
+            <>
+              {/* Optional: Show user info or other buttons */}
+              {/* <Typography variant="body2" color="text.secondary">
+                Welcome, {user.email}
+              </Typography> */}
+              <Profile />
+            </>
+          )}
         </Stack>
       </ToolbarStyled>
     </AppBarStyled>
