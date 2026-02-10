@@ -74,6 +74,7 @@ export default function DashboardLayout({ children }: Props) {
       }
     );
 
+    
     return () => subscription.unsubscribe();
   }, [router]);
 
