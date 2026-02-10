@@ -8,7 +8,6 @@ import {
   styled, 
   Stack, 
   IconButton, 
-  Badge, 
   Button,
   CircularProgress 
 } from '@mui/material';
