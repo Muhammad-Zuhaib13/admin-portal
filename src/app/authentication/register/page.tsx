@@ -3,7 +3,7 @@ import { Grid, Box, Card, Typography, Stack } from "@mui/material";
 import Link from "next/link";
 import PageContainer from "@/app/(DashboardLayout)/components/container/PageContainer";
 import Logo from "@/app/(DashboardLayout)/layout/shared/logo/Logo";
-import AuthRegister from "../auth/AuthRegister";
+
 import AuthRegistrationForm from "@/app/(DashboardLayout)/components/forms/theme-elements/AuthRegistrationForm";
 const Register2 = () => (
   <PageContainer title="Register" description="this is Register page">

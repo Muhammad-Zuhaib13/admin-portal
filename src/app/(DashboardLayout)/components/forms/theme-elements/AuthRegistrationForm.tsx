@@ -83,7 +83,7 @@ const AuthRegistrationForm = ({ subtext, subtitle }: AuthRegisterProps) => {
             last_name: values.lastName,
             full_name: `${values.firstName} ${values.lastName}`,
           },
-          emailRedirectTo: `${window.location.origin}/authentication/login`,
+           emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/authentication/login`,
         },
       });
 
