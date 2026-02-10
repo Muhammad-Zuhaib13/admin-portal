@@ -53,7 +53,7 @@ const Profile = () => {
   };
 
   return (
-    <Box>
+    <Box >
       <IconButton
         size="large"
         aria-label="profile menu"

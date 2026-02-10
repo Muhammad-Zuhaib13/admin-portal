@@ -74,7 +74,7 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
   }));
 
   return (
-    <AppBarStyled position="sticky" color="default">
+    <AppBarStyled position="sticky" color="default" sx={{boxShadow:'0 2px 5px -3px rgba(0, 0, 0, 0.3)'}}>
       <ToolbarStyled>
         {/* Mobile Menu Button */}
         <IconButton
@@ -92,7 +92,7 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
         </IconButton>
 
         {/* Notifications */}
-        {user && (
+        {/* {user && (
           <IconButton
             size="large"
             aria-label="show 11 new notifications"
@@ -104,7 +104,7 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
               <IconBellRinging size="21" stroke="1.5" />
             </Badge>
           </IconButton>
-        )}
+        )} */}
 
         <Box flexGrow={1} />
 
@@ -122,10 +122,6 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
             </Button>
           ) : (
             <>
-              {/* Optional: Show user info or other buttons */}
-              {/* <Typography variant="body2" color="text.secondary">
-                Welcome, {user.email}
-              </Typography> */}
               <Profile />
             </>
           )}
