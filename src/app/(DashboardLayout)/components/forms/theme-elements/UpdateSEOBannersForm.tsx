@@ -7,19 +7,16 @@ import {
   Button,
   Stack,
   Typography,
-  IconButton,
   Alert,
   CircularProgress,
   Card,
   CardContent,
   Divider,
 } from "@mui/material";
-import { Formik, Form, FieldArray } from "formik";
+import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { supabase } from "@/app/lib/supabase";
 import { useParams, useRouter } from "next/navigation";
 
@@ -27,7 +24,7 @@ import { useParams, useRouter } from "next/navigation";
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-// Update validation schema to include poster field
+// Updated validation schema - removed content fields
 const validationSchema = Yup.object({
   seo: Yup.object({
     title: Yup.string().required("Required"),
@@ -45,44 +42,7 @@ const validationSchema = Yup.object({
     title: Yup.string().required("Required"),
     description: Yup.string().required("Required"),
     videoUrl: Yup.string().url("Must be a valid URL").required("Required"),
-    poster: Yup.string().url("Must be a valid URL").required("Required"), // Added poster field
-  }),
-  content: Yup.object({
-    title: Yup.string().required("Required"),
-    createdDate: Yup.string().required("Required"),
-    cta: Yup.object({
-      slug: Yup.string().required("Required"),
-      text: Yup.string().required("Required"),
-    }),
-    description: Yup.array()
-      .of(
-        Yup.object({
-          text: Yup.string().required("Required"),
-        })
-      )
-      .min(1, "At least one description paragraph is required"),
-    tags: Yup.object({
-      list: Yup.array()
-        .of(
-          Yup.object({
-            text: Yup.string().required("Tag is required"),
-          })
-        )
-        .min(1, "At least one tag is required"),
-      text: Yup.string().default("Tags"),
-    }),
-    urls: Yup.object({
-      list: Yup.array()
-        .of(
-          Yup.object({
-            text: Yup.string().required("Link text is required"),
-            href: Yup.string().url("Must be a valid URL").required("URL is required"),
-          })
-        )
-        .min(1, "At least one URL is required"),
-      text: Yup.string().default("Urls"),
-    }),
-    thumbImage: Yup.string().url("Must be a valid URL").optional(),
+    poster: Yup.string().url("Must be a valid URL").required("Required"),
   }),
 });
 
@@ -107,25 +67,7 @@ const emptyInitialValues = {
     title: "",
     description: "",
     videoUrl: "",
-    poster: "", // Added poster field
-  },
-  content: {
-    cta: {
-      slug: "",
-      text: "",
-    },
-    title: "",
-    thumbImage: "",
-    createdDate: new Date().toISOString().split('T')[0],
-    description: [{ text: "" }],
-    tags: {
-      list: [{ text: "" }],
-      text: "Tags",
-    },
-    urls: {
-      list: [{ text: "", href: "" }],
-      text: "Urls",
-    },
+    poster: "",
   },
 };
 
@@ -140,7 +82,7 @@ const uploadToCloudinary = async (file: File, type: 'image' | 'video') => {
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
   
   // Optional: Add folder for organization
-  formData.append('folder', 'blogs');
+  formData.append('folder', 'seo_banners');
   
   let cloudinaryUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/`;
   
@@ -270,10 +212,10 @@ const FileUploadField = ({
   );
 };
 
-const UpdateBlogForm = () => {
+const UpdateSEOBannersForm = () => {
   const params = useParams();
   const router = useRouter();
-  const blogId = params.id;
+  const bannerId = params.id;
   
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -282,19 +224,19 @@ const UpdateBlogForm = () => {
   const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
   const [initialValues, setInitialValues] = useState(emptyInitialValues);
 
-  // Fetch blog data when component mounts
+  // Fetch SEO Banner data when component mounts
   useEffect(() => {
-    const fetchBlogData = async () => {
-      if (!blogId) return;
+    const fetchSEOBannerData = async () => {
+      if (!bannerId) return;
       
       setFetching(true);
       setError(null);
       
       try {
         const { data, error: supabaseError } = await supabase
-          .from("blogs")
+          .from("seo_banners") // Changed from "blogs" to "seo_banners"
           .select("*")
-          .eq("id", blogId)
+          .eq("id", bannerId)
           .single();
 
         if (supabaseError) {
@@ -302,7 +244,7 @@ const UpdateBlogForm = () => {
         }
 
         if (!data) {
-          throw new Error("Blog not found");
+          throw new Error("SEO Banner not found");
         }
 
         // Transform the data to match our form structure
@@ -326,59 +268,25 @@ const UpdateBlogForm = () => {
             title: data.banner?.title || "",
             description: data.banner?.description || "",
             videoUrl: data.banner?.videoUrl || "",
-            poster: data.banner?.poster || "", // Added poster field
-          },
-          content: {
-            cta: {
-              slug: data.content?.cta?.slug || "",
-              text: data.content?.cta?.text || "",
-            },
-            title: data.content?.title || "",
-            thumbImage: data.content?.thumbImage || "",
-            createdDate: data.content?.createdDate || new Date().toISOString().split('T')[0],
-            description: data.content?.description?.length 
-              ? data.content.description.map((item: any) => ({ 
-                  text: item.text || "",
-                  id: item.id || undefined 
-                }))
-              : [{ text: "" }],
-            tags: {
-              list: data.content?.tags?.list?.length 
-                ? data.content.tags.list.map((item: any) => ({ 
-                    text: item.text || "",
-                    id: item.id || undefined 
-                  }))
-                : [{ text: "" }],
-              text: data.content?.tags?.text || "Tags",
-            },
-            urls: {
-              list: data.content?.urls?.list?.length 
-                ? data.content.urls.list.map((item: any) => ({ 
-                    text: item.text || "",
-                    href: item.href || "",
-                    id: item.id || undefined 
-                  }))
-                : [{ text: "", href: "" }],
-              text: data.content?.urls?.text || "Urls",
-            },
+            poster: data.banner?.poster || "",
           },
         };
          
         setInitialValues(transformedData);
       } catch (err: any) {
-        console.error("Error fetching blog:", err);
-        setError(err.message || "Failed to load blog data");
+        console.error("Error fetching SEO Banner:", err);
+        setError(err.message || "Failed to load SEO Banner data");
       } finally {
         setFetching(false);
       }
     };
 
-    fetchBlogData();
-  }, [blogId]);
+    fetchSEOBannerData();
+  }, [bannerId]);
   
   const handleSubmit = async (values: typeof emptyInitialValues) => {
-    if (!blogId) {
-      setError("Blog ID is missing");
+    if (!bannerId) {
+      setError("SEO Banner ID is missing");
       return;
     }
 
@@ -388,43 +296,37 @@ const UpdateBlogForm = () => {
 
     try {
       // Prepare data for Supabase update
-      const blogData = {
+      const seoBannerData = {
         seo: values.seo,
         banner: values.banner,
-        content: values.content,
       };
 
-      console.log("Updating blog in Supabase:", blogData);
+      console.log("Updating SEO Banner in Supabase:", seoBannerData);
 
       // Update in Supabase
       const { data, error: supabaseError } = await supabase
-        .from("blogs")
-        .update(blogData)
-        .eq("id", blogId)
+        .from("seo_banners") // Changed from "blogs" to "seo_banners"
+        .update(seoBannerData)
+        .eq("id", bannerId)
         .select();
 
       if (supabaseError) {
         throw new Error(supabaseError.message);
       }
 
-      console.log("Blog updated successfully:", data);
+      console.log("SEO Banner updated successfully:", data);
       setSuccess(true);
       
-      // Redirect after successful update (optional)
-      // setTimeout(() => {
-      //   router.push("/created-blogs");
-      // }, 2000);
-      
     } catch (err: any) {
-      console.error("Error updating blog:", err);
-      setError(err.message || "Failed to update blog");
+      console.error("Error updating SEO Banner:", err);
+      setError(err.message || "Failed to update SEO Banner");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoBack = () => {
-    router.push("/created-blogs");
+    router.push("/created-seo-banners"); // Updated route
   };
 
   const handleFileUpload = (fieldName: string, url: string, setFieldValue: any) => {
@@ -441,7 +343,7 @@ const UpdateBlogForm = () => {
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
         <Stack spacing={2} alignItems="center">
           <CircularProgress />
-          <Typography>Loading blog data...</Typography>
+          <Typography>Loading SEO Banner data...</Typography>
         </Stack>
       </Box>
     );
@@ -467,10 +369,10 @@ const UpdateBlogForm = () => {
                 onClick={handleGoBack}
                 variant="outlined"
               >
-                Back to Blogs
+                Back to SEO Banners
               </Button>
               <Typography variant="h5" component="h1" fontWeight="bold">
-                Update Blog #{blogId}
+                Update SEO Banner #{bannerId}
               </Typography>
             </Stack>
 
@@ -484,14 +386,14 @@ const UpdateBlogForm = () => {
                     size="small" 
                     onClick={() => {
                       setSuccess(false);
-                      router.push("/created-blogs");
+                      router.push("/created-seo-banners");
                     }}
                   >
-                    View All Blogs
+                    View All SEO Banners
                   </Button>
                 }
               >
-                Blog updated successfully!
+                SEO Banner updated successfully!
               </Alert>
             )}
 
@@ -708,275 +610,6 @@ const UpdateBlogForm = () => {
               </CardContent>
             </Card>
 
-            {/* Content Section */}
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>Content</Typography>
-                <Stack spacing={3}>
-                  <TextField
-                    label="Content Title"
-                    name="content.title"
-                    value={values.content.title}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(touched.content?.title && errors.content?.title)}
-                    helperText={touched.content?.title && errors.content?.title}
-                    fullWidth
-                    disabled={loading}
-                  />
-                  
-                  {/* Thumbnail Image URL with Cloudinary upload */}
-                  <FileUploadField
-                    label="Thumbnail Image URL"
-                    name="content.thumbImage"
-                    value={values.content.thumbImage}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(touched.content?.thumbImage && errors.content?.thumbImage)}
-                    helperText={String(touched.content?.thumbImage && errors.content?.thumbImage) || undefined}
-                    disabled={loading}
-                    placeholder="https://example.com/image.jpg or upload image"
-                    accept="image/*"
-                    type="image"
-                    onUpload={(url) => setFieldValue("content.thumbImage", url)}
-                    uploading={uploadingFields.has("content.thumbImage")}
-                  />
-                  
-                  <TextField
-                    label="Created Date"
-                    name="content.createdDate"
-                    type="date"
-                    value={values.content.createdDate}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(touched.content?.createdDate && errors.content?.createdDate)}
-                    helperText={touched.content?.createdDate && errors.content?.createdDate}
-                    fullWidth
-                    disabled={loading}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                  
-                  {/* CTA */}
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>Call to Action (CTA)</Typography>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                      <TextField
-                        label="CTA Slug"
-                        name="content.cta.slug"
-                        value={values.content.cta.slug}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(touched.content?.cta?.slug && errors.content?.cta?.slug)}
-                        helperText={touched.content?.cta?.slug && errors.content?.cta?.slug}
-                        fullWidth
-                        disabled={loading}
-                        placeholder="/blogs/sample-blog"
-                      />
-                      <TextField
-                        label="CTA Text"
-                        name="content.cta.text"
-                        value={values.content.cta.text}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(touched.content?.cta?.text && errors.content?.cta?.text)}
-                        helperText={touched.content?.cta?.text && errors.content?.cta?.text}
-                        fullWidth
-                        disabled={loading}
-                        placeholder="Read more"
-                      />
-                    </Stack>
-                  </Box>
-
-                  {/* Description Blocks */}
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Description Paragraphs
-                    </Typography>
-                    <FieldArray name="content.description">
-                      {({ push, remove }) => (
-                        <Stack spacing={2}>
-                          {values.content.description.map((item, index) => {
-                            const fieldError = errors.content?.description?.[index];
-                            const fieldTouched = touched.content?.description?.[index];
-                            const errorMessage = typeof fieldError === 'object' && fieldError?.text ? fieldError.text : '';
-                            
-                            return (
-                              <Stack direction="row" spacing={1} key={index} alignItems="flex-start">
-                                <TextField
-                                  fullWidth
-                                  multiline
-                                  rows={3}
-                                  name={`content.description.${index}.text`}
-                                  value={item.text}
-                                  onChange={handleChange}
-                                  onBlur={handleBlur}
-                                  error={Boolean(fieldTouched?.text && errorMessage)}
-                                  helperText={fieldTouched?.text && errorMessage}
-                                  disabled={loading}
-                                  placeholder={`Paragraph ${index + 1}`}
-                                />
-                                <IconButton 
-                                  onClick={() => remove(index)}
-                                  disabled={loading || values.content.description.length <= 1}
-                                  sx={{ mt: 1 }}
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Stack>
-                            );
-                          })}
-                          <Button
-                            startIcon={<AddIcon />}
-                            onClick={() => push({ text: "" })}
-                            disabled={loading}
-                            variant="outlined"
-                            sx={{ alignSelf: 'flex-start' }}
-                          >
-                            Add Paragraph
-                          </Button>
-                          {typeof errors.content?.description === 'string' && (
-                            <Typography color="error" variant="caption">
-                              {errors.content.description}
-                            </Typography>
-                          )}
-                        </Stack>
-                      )}
-                    </FieldArray>
-                  </Box>
-
-                  {/* Tags */}
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Tags
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                      Add relevant tags for your blog (e.g., "creative design agency", "branding and design agency")
-                    </Typography>
-                    <FieldArray name="content.tags.list">
-                      {({ push, remove }) => (
-                        <Stack spacing={2}>
-                          {values.content.tags.list.map((item, index) => {
-                            const fieldError = errors.content?.tags?.list?.[index];
-                            const fieldTouched = touched.content?.tags?.list?.[index];
-                            const errorMessage = typeof fieldError === 'object' && fieldError?.text ? fieldError.text : '';
-                            
-                            return (
-                              <Stack direction="row" spacing={1} key={index} alignItems="flex-start">
-                                <TextField
-                                  fullWidth
-                                  name={`content.tags.list.${index}.text`}
-                                  value={item.text}
-                                  onChange={handleChange}
-                                  onBlur={handleBlur}
-                                  error={Boolean(fieldTouched?.text && errorMessage)}
-                                  helperText={fieldTouched?.text && errorMessage}
-                                  disabled={loading}
-                                  placeholder={`Tag ${index + 1}`}
-                                />
-                                <IconButton 
-                                  onClick={() => remove(index)}
-                                  disabled={loading || values.content.tags.list.length <= 1}
-                                  sx={{ mt: 1 }}
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Stack>
-                            );
-                          })}
-                          <Button
-                            startIcon={<AddIcon />}
-                            onClick={() => push({ text: "" })}
-                            disabled={loading}
-                            variant="outlined"
-                            sx={{ alignSelf: 'flex-start' }}
-                          >
-                            Add Tag
-                          </Button>
-                          {typeof errors.content?.tags?.list === 'string' && (
-                            <Typography color="error" variant="caption">
-                              {errors.content.tags.list}
-                            </Typography>
-                          )}
-                        </Stack>
-                      )}
-                    </FieldArray>
-                  </Box>
-
-                  {/* URLs */}
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Related URLs
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                      Add related links (e.g., "Read More", "View Source")
-                    </Typography>
-                    <FieldArray name="content.urls.list">
-                      {({ push, remove }) => (
-                        <Stack spacing={2}>
-                          {values.content.urls.list.map((item, index) => {
-                            const fieldError = errors.content?.urls?.list?.[index];
-                            const fieldTouched = touched.content?.urls?.list?.[index];
-                            const textError = typeof fieldError === 'object' && fieldError?.text ? fieldError.text : '';
-                            const hrefError = typeof fieldError === 'object' && fieldError?.href ? fieldError.href : '';
-                            
-                            return (
-                              <Stack spacing={1} key={index}>
-                                <Stack direction="row" spacing={1} alignItems="flex-start">
-                                  <TextField
-                                    fullWidth
-                                    name={`content.urls.list.${index}.text`}
-                                    value={item.text}
-                                    onChange={handleChange}
-                                    onBlur={handleBlur}
-                                    error={Boolean(fieldTouched?.text && textError)}
-                                    helperText={fieldTouched?.text && textError}
-                                    disabled={loading}
-                                    placeholder="Link text (e.g., Read More)"
-                                  />
-                                  <TextField
-                                    fullWidth
-                                    name={`content.urls.list.${index}.href`}
-                                    value={item.href}
-                                    onChange={handleChange}
-                                    onBlur={handleBlur}
-                                    error={Boolean(fieldTouched?.href && hrefError)}
-                                    helperText={fieldTouched?.href && hrefError}
-                                    disabled={loading}
-                                    placeholder="https://example.com"
-                                  />
-                                  <IconButton 
-                                    onClick={() => remove(index)}
-                                    disabled={loading || values.content.urls.list.length <= 1}
-                                    sx={{ mt: 1 }}
-                                  >
-                                    <DeleteIcon />
-                                  </IconButton>
-                                </Stack>
-                              </Stack>
-                            );
-                          })}
-                          <Button
-                            startIcon={<AddIcon />}
-                            onClick={() => push({ text: "", href: "" })}
-                            disabled={loading}
-                            variant="outlined"
-                            sx={{ alignSelf: 'flex-start' }}
-                          >
-                            Add URL
-                          </Button>
-                          {typeof errors.content?.urls?.list === 'string' && (
-                            <Typography color="error" variant="caption">
-                              {errors.content.urls.list}
-                            </Typography>
-                          )}
-                        </Stack>
-                      )}
-                    </FieldArray>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-
             {/* Action Buttons */}
             <Stack direction="row" spacing={2} justifyContent="flex-end">
               <Button
@@ -994,7 +627,7 @@ const UpdateBlogForm = () => {
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                 sx={{ px: 4 }}
               >
-                {loading ? "Updating..." : "Update Blog"}
+                {loading ? "Updating..." : "Update SEO Banner"}
               </Button>
             </Stack>
           </Stack>
@@ -1004,4 +637,4 @@ const UpdateBlogForm = () => {
   );
 };
 
-export default UpdateBlogForm;
+export default UpdateSEOBannersForm;

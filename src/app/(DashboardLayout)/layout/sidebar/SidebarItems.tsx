@@ -73,12 +73,38 @@ const SidebarItems = () => {
 
   return (
     < >
-      <MUI_Sidebar width={"100%"} showProfile={false} themeColor={"#5D87FF"} themeSecondaryColor={'#49beff'} >
+      <MUI_Sidebar width={"100%"} showProfile={false} themeColor={"#e14807"} themeSecondaryColor={'#e14807'} >
 
-        <Logo img='/images/logos/dark-logo.svg' component={Link} to="/" >Modernize</Logo>
+        <Box
+          component={Link}
+          href="/"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            px: 3,
+            py: 2,
+            textDecoration: "none",
+          }}
+        >
+          <Box
+            component="img"
+            src="/images/logos/logo.png"
+            alt="Art By Encore"
+            sx={{ width: 36, height: 36 }}
+          />
+
+          <Typography
+            variant="h6"
+            fontWeight={700}
+            color="text.primary"
+          >
+            Art By Encore
+          </Typography>
+        </Box>
 
         {renderMenuItems(Menuitems, pathDirect)}
-        
+
       </MUI_Sidebar>
 
     </>

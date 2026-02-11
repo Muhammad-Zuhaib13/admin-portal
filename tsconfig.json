@@ -23,6 +23,9 @@
         "name": "next"
       }
     ],
+    "typeRoots": [
+      "app/types/yup.d.ts"
+    ],
     "paths": {
       "@/*": [
         "./src/*"

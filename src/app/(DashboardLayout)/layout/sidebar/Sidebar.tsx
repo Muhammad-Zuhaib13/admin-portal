@@ -28,6 +28,7 @@ const MSidebar = ({
       backgroundColor: '#eff2f7',
       borderRadius: '15px',
     },
+    
   };
 
 

@@ -14,10 +14,8 @@ import {
   CardContent,
   Divider,
 } from "@mui/material";
-import { Formik, Form, FieldArray } from "formik";
+import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { supabase } from "@/app/lib/supabase";
 
@@ -25,7 +23,7 @@ import { supabase } from "@/app/lib/supabase";
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-// Update validation schema to include poster field
+// Updated validation schema - removed content fields
 const validationSchema = Yup.object({
   seo: Yup.object({
     title: Yup.string().required("Required"),
@@ -43,44 +41,7 @@ const validationSchema = Yup.object({
     title: Yup.string().required("Required"),
     description: Yup.string().required("Required"),
     videoUrl: Yup.string().url("Must be a valid URL").required("Required"),
-    poster: Yup.string().url("Must be a valid URL").required("Required"), // Added poster field
-  }),
-  content: Yup.object({
-    title: Yup.string().required("Required"),
-    createdDate: Yup.string().required("Required"),
-    cta: Yup.object({
-      slug: Yup.string().required("Required"),
-      text: Yup.string().required("Required"),
-    }),
-    description: Yup.array()
-      .of(
-        Yup.object({
-          text: Yup.string().required("Required"),
-        })
-      )
-      .min(1, "At least one description paragraph is required"),
-    tags: Yup.object({
-      list: Yup.array()
-        .of(
-          Yup.object({
-            text: Yup.string().required("Tag is required"),
-          })
-        )
-        .min(1, "At least one tag is required"),
-      text: Yup.string().default("Tags"),
-    }),
-    urls: Yup.object({
-      list: Yup.array()
-        .of(
-          Yup.object({
-            text: Yup.string().required("Link text is required"),
-            href: Yup.string().url("Must be a valid URL").required("URL is required"),
-          })
-        )
-        .min(1, "At least one URL is required"),
-      text: Yup.string().default("Urls"),
-    }),
-    thumbImage: Yup.string().url("Must be a valid URL").optional(),
+    poster: Yup.string().url("Must be a valid URL").required("Required"),
   }),
 });
 
@@ -104,25 +65,7 @@ const initialValues = {
     title: "",
     description: "",
     videoUrl: "",
-    poster: "", // Added poster field
-  },
-  content: {
-    cta: {
-      slug: "",
-      text: "",
-    },
-    title: "",
-    thumbImage: "",
-    createdDate: new Date().toISOString().split('T')[0],
-    description: [{ text: "" }],
-    tags: {
-      list: [{ text: "" }],
-      text: "Tags",
-    },
-    urls: {
-      list: [{ text: "", href: "" }],
-      text: "Urls",
-    },
+    poster: "",
   },
 };
 
@@ -267,7 +210,7 @@ const FileUploadField = ({
   );
 };
 
-const CreateBlogForm = () => {
+const CreateSEOBannersForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -280,30 +223,29 @@ const CreateBlogForm = () => {
 
     try {
       // Prepare data for Supabase
-      const blogData = {
+      const seoBannerData = {
         seo: values.seo,
         banner: values.banner,
-        content: values.content,
       };
 
-      console.log("Submitting to Supabase:", blogData);
+      console.log("Submitting to Supabase:", seoBannerData);
 
-      // Insert into Supabase
+      // Insert into Supabase - changed table name to something more appropriate like "seo_banners"
       const { data, error: supabaseError } = await supabase
-        .from("blogs")
-        .insert([blogData])
+        .from("seo_banners") // Changed from "blogs" to "seo_banners"
+        .insert([seoBannerData])
         .select();
 
       if (supabaseError) {
         throw new Error(supabaseError.message);
       }
 
-      console.log("Blog created successfully:", data);
+      console.log("SEO Banner created successfully:", data);
       setSuccess(true);
       
     } catch (err: any) {
-      console.error("Error creating blog:", err);
-      setError(err.message || "Failed to create blog");
+      console.error("Error creating SEO Banner:", err);
+      setError(err.message || "Failed to create SEO Banner");
     } finally {
       setLoading(false);
     }
@@ -316,10 +258,6 @@ const CreateBlogForm = () => {
       return newSet;
     });
     setFieldValue(fieldName, url);
-  };
-
-  const startUpload = (fieldName: string) => {
-    setUploadingFields(prev => new Set(prev).add(fieldName));
   };
 
   return (
@@ -351,7 +289,7 @@ const CreateBlogForm = () => {
                   </Button>
                 }
               >
-                Blog created successfully!
+                SEO Banner created successfully!
               </Alert>
             )}
 
@@ -568,275 +506,6 @@ const CreateBlogForm = () => {
               </CardContent>
             </Card>
 
-            {/* Content Section */}
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>Content</Typography>
-                <Stack spacing={3}>
-                  <TextField
-                    label="Content Title"
-                    name="content.title"
-                    value={values.content.title}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(touched.content?.title && errors.content?.title)}
-                    helperText={touched.content?.title && errors.content?.title}
-                    fullWidth
-                    disabled={loading}
-                  />
-                  
-                  {/* Thumbnail Image URL with Cloudinary upload */}
-                  <FileUploadField
-                    label="Thumbnail Image URL"
-                    name="content.thumbImage"
-                    value={values.content.thumbImage}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(touched.content?.thumbImage && errors.content?.thumbImage)}
-                    helperText={String(touched.content?.thumbImage && errors.content?.thumbImage) || undefined}
-                    disabled={loading}
-                    placeholder="https://example.com/image.jpg or upload image"
-                    accept="image/*"
-                    type="image"
-                    onUpload={(url) => setFieldValue("content.thumbImage", url)}
-                    uploading={uploadingFields.has("content.thumbImage")}
-                  />
-                  
-                  <TextField
-                    label="Created Date"
-                    name="content.createdDate"
-                    type="date"
-                    value={values.content.createdDate}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(touched.content?.createdDate && errors.content?.createdDate)}
-                    helperText={touched.content?.createdDate && errors.content?.createdDate}
-                    fullWidth
-                    disabled={loading}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                  
-                  {/* CTA */}
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>Call to Action (CTA)</Typography>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                      <TextField
-                        label="CTA Slug"
-                        name="content.cta.slug"
-                        value={values.content.cta.slug}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(touched.content?.cta?.slug && errors.content?.cta?.slug)}
-                        helperText={touched.content?.cta?.slug && errors.content?.cta?.slug}
-                        fullWidth
-                        disabled={loading}
-                        placeholder="/blogs/sample-blog"
-                      />
-                      <TextField
-                        label="CTA Text"
-                        name="content.cta.text"
-                        value={values.content.cta.text}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(touched.content?.cta?.text && errors.content?.cta?.text)}
-                        helperText={touched.content?.cta?.text && errors.content?.cta?.text}
-                        fullWidth
-                        disabled={loading}
-                        placeholder="Read more"
-                      />
-                    </Stack>
-                  </Box>
-
-                  {/* Description Blocks */}
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Description Paragraphs
-                    </Typography>
-                    <FieldArray name="content.description">
-                      {({ push, remove }) => (
-                        <Stack spacing={2}>
-                          {values.content.description.map((item, index) => {
-                            const fieldError = errors.content?.description?.[index];
-                            const fieldTouched = touched.content?.description?.[index];
-                            const errorMessage = typeof fieldError === 'object' && fieldError?.text ? fieldError.text : '';
-                            
-                            return (
-                              <Stack direction="row" spacing={1} key={index} alignItems="flex-start">
-                                <TextField
-                                  fullWidth
-                                  multiline
-                                  rows={3}
-                                  name={`content.description.${index}.text`}
-                                  value={item.text}
-                                  onChange={handleChange}
-                                  onBlur={handleBlur}
-                                  error={Boolean(fieldTouched?.text && errorMessage)}
-                                  helperText={fieldTouched?.text && errorMessage}
-                                  disabled={loading}
-                                  placeholder={`Paragraph ${index + 1}`}
-                                />
-                                <IconButton 
-                                  onClick={() => remove(index)}
-                                  disabled={loading || values.content.description.length <= 1}
-                                  sx={{ mt: 1 }}
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Stack>
-                            );
-                          })}
-                          <Button
-                            startIcon={<AddIcon />}
-                            onClick={() => push({ text: "" })}
-                            disabled={loading}
-                            variant="outlined"
-                            sx={{ alignSelf: 'flex-start' }}
-                          >
-                            Add Paragraph
-                          </Button>
-                          {typeof errors.content?.description === 'string' && (
-                            <Typography color="error" variant="caption">
-                              {errors.content.description}
-                            </Typography>
-                          )}
-                        </Stack>
-                      )}
-                    </FieldArray>
-                  </Box>
-
-                  {/* Tags */}
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Tags
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                      Add relevant tags for your blog (e.g., "creative design agency", "branding and design agency")
-                    </Typography>
-                    <FieldArray name="content.tags.list">
-                      {({ push, remove }) => (
-                        <Stack spacing={2}>
-                          {values.content.tags.list.map((item, index) => {
-                            const fieldError = errors.content?.tags?.list?.[index];
-                            const fieldTouched = touched.content?.tags?.list?.[index];
-                            const errorMessage = typeof fieldError === 'object' && fieldError?.text ? fieldError.text : '';
-                            
-                            return (
-                              <Stack direction="row" spacing={1} key={index} alignItems="flex-start">
-                                <TextField
-                                  fullWidth
-                                  name={`content.tags.list.${index}.text`}
-                                  value={item.text}
-                                  onChange={handleChange}
-                                  onBlur={handleBlur}
-                                  error={Boolean(fieldTouched?.text && errorMessage)}
-                                  helperText={fieldTouched?.text && errorMessage}
-                                  disabled={loading}
-                                  placeholder={`Tag ${index + 1}`}
-                                />
-                                <IconButton 
-                                  onClick={() => remove(index)}
-                                  disabled={loading || values.content.tags.list.length <= 1}
-                                  sx={{ mt: 1 }}
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Stack>
-                            );
-                          })}
-                          <Button
-                            startIcon={<AddIcon />}
-                            onClick={() => push({ text: "" })}
-                            disabled={loading}
-                            variant="outlined"
-                            sx={{ alignSelf: 'flex-start' }}
-                          >
-                            Add Tag
-                          </Button>
-                          {typeof errors.content?.tags?.list === 'string' && (
-                            <Typography color="error" variant="caption">
-                              {errors.content.tags.list}
-                            </Typography>
-                          )}
-                        </Stack>
-                      )}
-                    </FieldArray>
-                  </Box>
-
-                  {/* URLs */}
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Related URLs
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                      Add related links (e.g., "Read More", "View Source")
-                    </Typography>
-                    <FieldArray name="content.urls.list">
-                      {({ push, remove }) => (
-                        <Stack spacing={2}>
-                          {values.content.urls.list.map((item, index) => {
-                            const fieldError = errors.content?.urls?.list?.[index];
-                            const fieldTouched = touched.content?.urls?.list?.[index];
-                            const textError = typeof fieldError === 'object' && fieldError?.text ? fieldError.text : '';
-                            const hrefError = typeof fieldError === 'object' && fieldError?.href ? fieldError.href : '';
-                            
-                            return (
-                              <Stack spacing={1} key={index}>
-                                <Stack direction="row" spacing={1} alignItems="flex-start">
-                                  <TextField
-                                    fullWidth
-                                    name={`content.urls.list.${index}.text`}
-                                    value={item.text}
-                                    onChange={handleChange}
-                                    onBlur={handleBlur}
-                                    error={Boolean(fieldTouched?.text && textError)}
-                                    helperText={fieldTouched?.text && textError}
-                                    disabled={loading}
-                                    placeholder="Link text (e.g., Read More)"
-                                  />
-                                  <TextField
-                                    fullWidth
-                                    name={`content.urls.list.${index}.href`}
-                                    value={item.href}
-                                    onChange={handleChange}
-                                    onBlur={handleBlur}
-                                    error={Boolean(fieldTouched?.href && hrefError)}
-                                    helperText={fieldTouched?.href && hrefError}
-                                    disabled={loading}
-                                    placeholder="https://example.com"
-                                  />
-                                  <IconButton 
-                                    onClick={() => remove(index)}
-                                    disabled={loading || values.content.urls.list.length <= 1}
-                                    sx={{ mt: 1 }}
-                                  >
-                                    <DeleteIcon />
-                                  </IconButton>
-                                </Stack>
-                              </Stack>
-                            );
-                          })}
-                          <Button
-                            startIcon={<AddIcon />}
-                            onClick={() => push({ text: "", href: "" })}
-                            disabled={loading}
-                            variant="outlined"
-                            sx={{ alignSelf: 'flex-start' }}
-                          >
-                            Add URL
-                          </Button>
-                          {typeof errors.content?.urls?.list === 'string' && (
-                            <Typography color="error" variant="caption">
-                              {errors.content.urls.list}
-                            </Typography>
-                          )}
-                        </Stack>
-                      )}
-                    </FieldArray>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-
             {/* Submit Button */}
             <Button 
               type="submit" 
@@ -846,7 +515,7 @@ const CreateBlogForm = () => {
               startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
               sx={{ alignSelf: 'flex-start', px: 4 }}
             >
-              {loading ? "Creating..." : "Create Blog"}
+              {loading ? "Creating..." : "Create SEO Banner"}
             </Button>
           </Stack>
         </Form>
@@ -855,4 +524,4 @@ const CreateBlogForm = () => {
   );
 };
 
-export default CreateBlogForm;
+export default CreateSEOBannersForm;
