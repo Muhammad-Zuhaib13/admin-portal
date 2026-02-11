@@ -262,16 +262,7 @@ const AuthRegistrationForm = ({ subtext, subtitle }: AuthRegisterProps) => {
                   </Typography>
                 </Divider>
               </Grid>
-              <Grid  size={{sm:12, xs:12}}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={() => router.push("/authentication/login")}
-                  disabled={loading}
-                >
-                  Already have an account? Sign In
-                </Button>
-              </Grid>
+             
             </Grid>
           </form>
         )}

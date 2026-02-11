@@ -14,7 +14,7 @@ const Login2 = () => {
           position: "relative",
           "&:before": {
             content: '""',
-            background: "radial-gradient(#d2f1df, #d3d7fa, #bad8f4)",
+            background: "#FFD6BA",
             backgroundSize: "400% 400%",
             animation: "gradient 15s ease infinite",
             position: "absolute",
@@ -44,9 +44,35 @@ const Login2 = () => {
               elevation={9}
               sx={{ p: 4, zIndex: 1, width: "100%", maxWidth: "500px" }}
             >
-              <Box display="flex" alignItems="center" justifyContent="center">
-                <Logo />
+              <Box
+                component={Link}
+                href="/"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  px: 3,
+                  py: 2,
+                  textDecoration: "none",
+                  justifyContent:"center"
+                }}
+              >
+                <Box
+                  component="img"
+                  src="/images/logos/logo.png"
+                  alt="Art By Encore"
+                  sx={{ width: 36, height: 36 }}
+                />
+
+                <Typography
+                  variant="h6"
+                  fontWeight={700}
+                  color="text.primary"
+                >
+                  Art By Encore
+                </Typography>
               </Box>
+
               <AuthLogin
                 subtext={
                   <Typography
@@ -55,36 +81,36 @@ const Login2 = () => {
                     color="textSecondary"
                     mb={1}
                   >
-                    Your Social Campaigns
+                    Admin Sign Up
                   </Typography>
                 }
-                subtitle={
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    justifyContent="center"
-                    mt={3}
-                  >
-                    <Typography
-                      color="textSecondary"
-                      variant="h6"
-                      fontWeight="500"
-                    >
-                      New to Modernize?
-                    </Typography>
-                    <Typography
-                      component={Link}
-                      href="/authentication/register"
-                      fontWeight="500"
-                      sx={{
-                        textDecoration: "none",
-                        color: "primary.main",
-                      }}
-                    >
-                      Create an account
-                    </Typography>
-                  </Stack>
-                }
+              // subtitle={
+              //   <Stack
+              //     direction="row"
+              //     spacing={1}
+              //     justifyContent="center"
+              //     mt={3}
+              //   >
+              //     <Typography
+              //       color="textSecondary"
+              //       variant="h6"
+              //       fontWeight="500"
+              //     >
+              //       New to Modernize?
+              //     </Typography>
+              //     <Typography
+              //       component={Link}
+              //       href="/authentication/register"
+              //       fontWeight="500"
+              //       sx={{
+              //         textDecoration: "none",
+              //         color: "primary.main",
+              //       }}
+              //     >
+              //       Create an account
+              //     </Typography>
+              //   </Stack>
+              // }
               />
             </Card>
           </Grid>

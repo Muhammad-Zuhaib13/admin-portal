@@ -11,12 +11,15 @@ import {
   Checkbox,
   Alert,
   CircularProgress,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import CustomTextField from "@/app/(DashboardLayout)/components/forms/theme-elements/CustomTextField";
+import { Visibility, VisibilityOff, Email, Lock } from "@mui/icons-material";
 
 interface loginType {
   title?: string;
@@ -28,9 +31,7 @@ const validationSchema = Yup.object({
   email: Yup.string()
     .email("Invalid email address")
     .required("Email is required"),
-  password: Yup.string()
-    .min(6, "Password must be at least 6 characters")
-    .required("Password is required"),
+  password: Yup.string().required("Password is required"),
   rememberMe: Yup.boolean(),
 });
 
@@ -43,6 +44,7 @@ const initialValues = {
 const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [showPassword, setShowPassword] = React.useState(false);
   const router = useRouter();
 
   const handleSubmit = async (values: typeof initialValues) => {
@@ -101,6 +103,10 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
     }
   };
 
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <>
       {title ? (
@@ -128,59 +134,81 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
       >
         {({ values, errors, touched, handleChange, handleBlur, setFieldValue }) => (
           <Form>
-            <Stack>
+            <Stack spacing={3}>
+              {/* Email Field with Floating Label */}
               <Box>
-                <Typography
-                  variant="subtitle1"
-                  fontWeight={600}
-                  component="label"
-                  htmlFor="email"
-                  mb="5px"
-                >
-                  Email
-                </Typography>
                 <CustomTextField
                   id="email"
                   name="email"
                   variant="outlined"
                   fullWidth
+                  placeholder=" "
                   value={values.email}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   error={touched.email && Boolean(errors.email)}
                   helperText={touched.email && errors.email}
                   disabled={loading}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  label="Email Address"
                 />
               </Box>
-              <Box mt="25px">
-                <Typography
-                  variant="subtitle1"
-                  fontWeight={600}
-                  component="label"
-                  htmlFor="password"
-                  mb="5px"
-                >
-                  Password
-                </Typography>
+
+              {/* Password Field with Floating Label */}
+              <Box>
                 <CustomTextField
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   variant="outlined"
                   fullWidth
+                  placeholder=" "
                   value={values.password}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   error={touched.password && Boolean(errors.password)}
                   helperText={touched.password && errors.password}
                   disabled={loading}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={handleTogglePasswordVisibility}
+                          edge="end"
+                          size="small"
+                          disabled={loading}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  label="Password"
                 />
               </Box>
+
               <Stack
                 justifyContent="space-between"
                 direction="row"
                 alignItems="center"
-                my={2}
               >
                 <FormGroup>
                   <FormControlLabel
@@ -195,7 +223,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                     label="Remember this Device"
                   />
                 </FormGroup>
-                <Typography
+                {/* <Typography
                   component="button"
                   type="button"
                   onClick={() => handleForgotPassword(values.email)}
@@ -212,22 +240,23 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                   }}
                 >
                   Forgot Password ?
-                </Typography>
+                </Typography> */}
               </Stack>
+
+              <Box>
+                <Button
+                  color="primary"
+                  variant="contained"
+                  size="large"
+                  fullWidth
+                  type="submit"
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+                >
+                  {loading ? "Signing In..." : "Sign In"}
+                </Button>
+              </Box>
             </Stack>
-            <Box>
-              <Button
-                color="primary"
-                variant="contained"
-                size="large"
-                fullWidth
-                type="submit"
-                disabled={loading}
-                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-              >
-                {loading ? "Signing In..." : "Sign In"}
-              </Button>
-            </Box>
           </Form>
         )}
       </Formik>
