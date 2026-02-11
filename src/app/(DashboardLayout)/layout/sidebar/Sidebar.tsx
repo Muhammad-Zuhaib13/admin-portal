@@ -1,5 +1,6 @@
 import { useMediaQuery, Box, Drawer } from "@mui/material";
 import SidebarItems from "./SidebarItems";
+import { Background } from "@cloudinary/url-gen/qualifiers";
 
 
 
@@ -28,7 +29,7 @@ const MSidebar = ({
       backgroundColor: '#eff2f7',
       borderRadius: '15px',
     },
-    
+    background:'#fafafa'
   };
 
 
