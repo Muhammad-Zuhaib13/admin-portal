@@ -1,4 +1,3 @@
-// app/(DashboardLayout)/components/authentication/auth/AuthRegister.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -14,11 +13,14 @@ import {
   Alert,
   CircularProgress,
   Divider,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
+import { Visibility, VisibilityOff, Person, Email, Lock, Badge } from "@mui/icons-material";
 
 const validationSchema = Yup.object({
   firstName: Yup.string()
@@ -65,6 +67,8 @@ const AuthRegistrationForm = ({ subtext, subtitle }: AuthRegisterProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (values: typeof initialValues) => {
@@ -83,7 +87,7 @@ const AuthRegistrationForm = ({ subtext, subtitle }: AuthRegisterProps) => {
             last_name: values.lastName,
             full_name: `${values.firstName} ${values.lastName}`,
           },
-           emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/authentication/login`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/authentication/login`,
         },
       });
 
@@ -106,6 +110,14 @@ const AuthRegistrationForm = ({ subtext, subtitle }: AuthRegisterProps) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleToggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   return (
@@ -143,75 +155,167 @@ const AuthRegistrationForm = ({ subtext, subtitle }: AuthRegisterProps) => {
         }) => (
           <form onSubmit={handleSubmit}>
             <Grid container spacing={2}>
-              <Grid size={{sm:6, xs:12}}>
+              {/* First Name Field with Floating Label */}
+              <Grid size={{ sm: 6, xs: 12 }}>
                 <TextField
                   fullWidth
-                  label="First Name"
-                  name="firstName"
+                  placeholder=" "
                   value={values.firstName}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   error={touched.firstName && Boolean(errors.firstName)}
                   helperText={touched.firstName && errors.firstName}
                   disabled={loading}
+                  name="firstName"
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Person color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  label="First Name"
                 />
               </Grid>
-              <Grid size={{sm:6, xs:12}}>
+
+              {/* Last Name Field with Floating Label */}
+              <Grid size={{ sm: 6, xs: 12 }}>
                 <TextField
                   fullWidth
-                  label="Last Name"
-                  name="lastName"
+                  placeholder=" "
                   value={values.lastName}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   error={touched.lastName && Boolean(errors.lastName)}
                   helperText={touched.lastName && errors.lastName}
                   disabled={loading}
+                  name="lastName"
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Badge color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  label="Last Name"
                 />
               </Grid>
-              <Grid size={{sm:12, xs:12}}>
+
+              {/* Email Field with Floating Label */}
+              <Grid size={{ sm: 12, xs: 12 }}>
                 <TextField
                   fullWidth
-                  label="Email Address"
-                  name="email"
-                  type="email"
+                  placeholder=" "
                   value={values.email}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   error={touched.email && Boolean(errors.email)}
                   helperText={touched.email && errors.email}
                   disabled={loading}
+                  name="email"
+                  type="email"
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  label="Email Address"
                 />
               </Grid>
-              <Grid  size={{sm:12, xs:12}}>
+
+              {/* Password Field with Floating Label */}
+              <Grid size={{ sm: 12, xs: 12 }}>
                 <TextField
                   fullWidth
-                  label="Password"
-                  name="password"
-                  type="password"
+                  placeholder=" "
                   value={values.password}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   error={touched.password && Boolean(errors.password)}
                   helperText={touched.password && errors.password}
                   disabled={loading}
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={handleTogglePasswordVisibility}
+                          edge="end"
+                          size="small"
+                          disabled={loading}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  label="Password"
                 />
               </Grid>
-              <Grid  size={{sm:12, xs:12}}>
+
+              {/* Confirm Password Field with Floating Label */}
+              <Grid size={{ sm: 12, xs: 12 }}>
                 <TextField
                   fullWidth
-                  label="Confirm Password"
-                  name="confirmPassword"
-                  type="password"
+                  placeholder=" "
                   value={values.confirmPassword}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   error={touched.confirmPassword && Boolean(errors.confirmPassword)}
                   helperText={touched.confirmPassword && errors.confirmPassword}
                   disabled={loading}
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle confirm password visibility"
+                          onClick={handleToggleConfirmPasswordVisibility}
+                          edge="end"
+                          size="small"
+                          disabled={loading}
+                        >
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  label="Confirm Password"
                 />
               </Grid>
-              <Grid  size={{sm:12, xs:12}}>
+
+              {/* Terms & Conditions Checkbox */}
+              <Grid size={{ sm: 12, xs: 12 }}>
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -242,7 +346,9 @@ const AuthRegistrationForm = ({ subtext, subtitle }: AuthRegisterProps) => {
                   </Typography>
                 )}
               </Grid>
-              <Grid  size={{sm:12, xs:12}}>
+
+              {/* Submit Button */}
+              <Grid size={{ sm: 12, xs: 12 }}>
                 <Button
                   type="submit"
                   color="primary"
@@ -255,14 +361,15 @@ const AuthRegistrationForm = ({ subtext, subtitle }: AuthRegisterProps) => {
                   {loading ? "Creating Account..." : "Sign Up"}
                 </Button>
               </Grid>
-              <Grid  size={{sm:12, xs:12}}>
+
+              {/* Divider */}
+              <Grid size={{ sm: 12, xs: 12 }}>
                 <Divider>
                   <Typography variant="body2" color="textSecondary">
                     OR
                   </Typography>
                 </Divider>
               </Grid>
-             
             </Grid>
           </form>
         )}

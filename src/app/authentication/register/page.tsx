@@ -2,7 +2,7 @@
 import { Grid, Box, Card, Typography, Stack } from "@mui/material";
 import Link from "next/link";
 import PageContainer from "@/app/(DashboardLayout)/components/container/PageContainer";
-import Logo from "@/app/(DashboardLayout)/layout/shared/logo/Logo";
+
 
 import AuthRegistrationForm from "@/app/(DashboardLayout)/components/forms/theme-elements/AuthRegistrationForm";
 const Register2 = () => (
@@ -12,7 +12,7 @@ const Register2 = () => (
         position: "relative",
         "&:before": {
           content: '""',
-          background: "radial-gradient(#d2f1df, #d3d7fa, #bad8f4)",
+          background: "#FFD6BA",
           backgroundSize: "400% 400%",
           animation: "gradient 15s ease infinite",
           position: "absolute",
@@ -42,8 +42,33 @@ const Register2 = () => (
             elevation={9}
             sx={{ p: 4, zIndex: 1, width: "100%", maxWidth: "500px" }}
           >
-            <Box display="flex" alignItems="center" justifyContent="center">
-              <Logo />
+            <Box
+              component={Link}
+              href="/"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                px: 3,
+                py: 2,
+                textDecoration: "none",
+                justifyContent: "center"
+              }}
+            >
+              <Box
+                component="img"
+                src="/images/logos/logo.png"
+                alt="Art By Encore"
+                sx={{ width: 36, height: 36 }}
+              />
+
+              <Typography
+                variant="h6"
+                fontWeight={700}
+                color="text.primary"
+              >
+                Art By Encore
+              </Typography>
             </Box>
             <AuthRegistrationForm
               subtext={
