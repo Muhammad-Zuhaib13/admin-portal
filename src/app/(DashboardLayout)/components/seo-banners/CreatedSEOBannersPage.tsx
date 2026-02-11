@@ -487,9 +487,9 @@ const CreatedSEOBannersPage = () => {
                           <Typography variant="caption" color="text.secondary">
                             Created: {formatDate(banner.created_at)}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          {/* <Typography variant="caption" color="text.secondary">
                             Updated: {formatDate(banner.updated_at)}
-                          </Typography>
+                          </Typography> */}
                           {banner.status && (
                             <Chip
                               label={banner.status}

@@ -8,14 +8,21 @@ import {
 import { uniqueId } from "lodash";
 
 const Menuitems = [
+
+  // {
+  //   navlabel: true,
+  //   subheader: "HOME",
+  // },
   {
-    navlabel: true,
-    subheader: "HOME",
+    id: uniqueId(),
+    title: "Dashboard",
+    icon: IconLayoutDashboard,
+    href: "/",
   },
   {
     id: uniqueId(),
     title: "Create SEO Banners",
-    icon: IconLayoutDashboard,
+    icon: IconPencilPlus,
     href: '/create-seo-banners'
   },
   {
@@ -24,12 +31,7 @@ const Menuitems = [
     icon: IconListCheck,
     href: '/created-seo-banners'
   },
-  // {
-  //   id: uniqueId(),
-  //   title: "Dashboard",
-  //   icon: IconLayoutDashboard,
-  //   href: "/",
-  // },
+
   {
     id: uniqueId(),
     title: "Create Blog",

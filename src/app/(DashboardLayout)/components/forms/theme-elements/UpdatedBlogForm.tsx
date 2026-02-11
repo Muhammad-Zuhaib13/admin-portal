@@ -45,7 +45,7 @@ const validationSchema = Yup.object({
     title: Yup.string().required("Required"),
     description: Yup.string().required("Required"),
     videoUrl: Yup.string().url("Must be a valid URL").required("Required"),
-    poster: Yup.string().url("Must be a valid URL").required("Required"), // Added poster field
+    poster: Yup.string().url("Must be a valid URL").required("Required"),
   }),
   content: Yup.object({
     title: Yup.string().required("Required"),
@@ -107,7 +107,7 @@ const emptyInitialValues = {
     title: "",
     description: "",
     videoUrl: "",
-    poster: "", // Added poster field
+    poster: "",
   },
   content: {
     cta: {
@@ -185,7 +185,8 @@ const FileUploadField = ({
   accept,
   type = 'image',
   onUpload,
-  uploading
+  uploading,
+  resetKey
 }: {
   label: string;
   name: string;
@@ -200,6 +201,7 @@ const FileUploadField = ({
   type?: 'image' | 'video';
   onUpload: (url: string) => void;
   uploading: boolean;
+  resetKey?: string | number;
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [localUploading, setLocalUploading] = useState(false);
@@ -226,39 +228,41 @@ const FileUploadField = ({
   const isUploading = uploading || localUploading;
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: '100%' }} key={resetKey}>
       <TextField
         fullWidth
         label={label}
         name={name}
-        value={value}
+        value={value || ''}
         onChange={onChange}
         onBlur={onBlur}
         error={error}
         helperText={helperText}
         disabled={disabled || isUploading}
         placeholder={placeholder}
-        InputProps={{
-          endAdornment: (
-            <Button
-              component="label"
-              variant="outlined"
-              size="small"
-              startIcon={isUploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
-              disabled={disabled || isUploading}
-              sx={{ ml: 1, flexShrink: '0' }}
-            >
-              Upload
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={accept}
-                hidden
-                onChange={handleFileUpload}
+        slotProps={{
+          input: {
+            endAdornment: (
+              <Button
+                component="label"
+                variant="outlined"
+                size="small"
+                startIcon={isUploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
                 disabled={disabled || isUploading}
-              />
-            </Button>
-          ),
+                sx={{ ml: 1, flexShrink: '0' }}
+              >
+                Upload
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={accept}
+                  hidden
+                  onChange={handleFileUpload}
+                  disabled={disabled || isUploading}
+                />
+              </Button>
+            ),
+          }
         }}
       />
       {isUploading && (
@@ -281,6 +285,7 @@ const UpdateBlogForm = () => {
   const [success, setSuccess] = useState(false);
   const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
   const [initialValues, setInitialValues] = useState(emptyInitialValues);
+  const [formResetKey, setFormResetKey] = useState(Date.now());
 
   // Fetch blog data when component mounts
   useEffect(() => {
@@ -326,7 +331,7 @@ const UpdateBlogForm = () => {
             title: data.banner?.title || "",
             description: data.banner?.description || "",
             videoUrl: data.banner?.videoUrl || "",
-            poster: data.banner?.poster || "", // Added poster field
+            poster: data.banner?.poster || "",
           },
           content: {
             cta: {
@@ -365,6 +370,7 @@ const UpdateBlogForm = () => {
         };
          
         setInitialValues(transformedData);
+        setFormResetKey(Date.now());
       } catch (err: any) {
         console.error("Error fetching blog:", err);
         setError(err.message || "Failed to load blog data");
@@ -410,11 +416,6 @@ const UpdateBlogForm = () => {
       console.log("Blog updated successfully:", data);
       setSuccess(true);
       
-      // Redirect after successful update (optional)
-      // setTimeout(() => {
-      //   router.push("/created-blogs");
-      // }, 2000);
-      
     } catch (err: any) {
       console.error("Error updating blog:", err);
       setError(err.message || "Failed to update blog");
@@ -428,12 +429,12 @@ const UpdateBlogForm = () => {
   };
 
   const handleFileUpload = (fieldName: string, url: string, setFieldValue: any) => {
+    setFieldValue(fieldName, url);
     setUploadingFields(prev => {
       const newSet = new Set(prev);
       newSet.delete(fieldName);
       return newSet;
     });
-    setFieldValue(fieldName, url);
   };
 
   if (fetching) {
@@ -454,9 +455,9 @@ const UpdateBlogForm = () => {
       validateOnChange={false}
       validateOnBlur={true}
       onSubmit={handleSubmit}
-      enableReinitialize // Important: This allows the form to reinitialize when initialValues change
+      enableReinitialize={true}
     >
-      {({ values, handleChange, handleBlur, touched, errors, resetForm, setFieldValue }) => (
+      {({ values, handleChange, handleBlur, touched, errors, setFieldValue }) => (
         <Form>
           <Stack spacing={4} sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
             
@@ -503,13 +504,13 @@ const UpdateBlogForm = () => {
 
             {/* SEO Section */}
             <Card>
-              <CardContent>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 <Typography variant="h6" gutterBottom>SEO Settings</Typography>
                 <Stack spacing={3}>
                   <TextField
                     label="SEO Title"
                     name="seo.title"
-                    value={values.seo.title}
+                    value={values.seo.title || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.title && errors.seo?.title)}
@@ -523,7 +524,7 @@ const UpdateBlogForm = () => {
                     name="seo.description"
                     multiline
                     rows={3}
-                    value={values.seo.description}
+                    value={values.seo.description || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.description && errors.seo?.description)}
@@ -535,7 +536,7 @@ const UpdateBlogForm = () => {
                   <TextField
                     label="Keywords"
                     name="seo.keywords"
-                    value={values.seo.keywords}
+                    value={values.seo.keywords || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.keywords && errors.seo?.keywords)}
@@ -548,7 +549,7 @@ const UpdateBlogForm = () => {
                   <TextField
                     label="Canonical URL"
                     name="seo.canonicalURL"
-                    value={values.seo.canonicalURL}
+                    value={values.seo.canonicalURL || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.canonicalURL && errors.seo?.canonicalURL)}
@@ -563,7 +564,7 @@ const UpdateBlogForm = () => {
                   <TextField
                     label="OG Title"
                     name="seo.openGraph.title"
-                    value={values.seo.openGraph.title}
+                    value={values.seo.openGraph.title || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(
@@ -581,7 +582,7 @@ const UpdateBlogForm = () => {
                   <TextField
                     label="OG Description"
                     name="seo.openGraph.description"
-                    value={values.seo.openGraph.description}
+                    value={values.seo.openGraph.description || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(
@@ -599,7 +600,7 @@ const UpdateBlogForm = () => {
                   <TextField
                     label="OG URL"
                     name="seo.openGraph.url"
-                    value={values.seo.openGraph.url}
+                    value={values.seo.openGraph.url || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(
@@ -616,19 +617,28 @@ const UpdateBlogForm = () => {
 
                   {/* OG Image with Cloudinary upload */}
                   <FileUploadField
+                    key={`og-image-${formResetKey}`}
                     label="OG Image"
                     name="seo.openGraph.image"
                     value={values.seo.openGraph.image}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.openGraph?.image && errors.seo?.openGraph?.image)}
-                    helperText={String(touched.seo?.openGraph?.image && errors.seo?.openGraph?.image) || undefined}
+                    helperText={touched.seo?.openGraph?.image && errors.seo?.openGraph?.image ? String(errors.seo.openGraph.image) : undefined}
                     disabled={loading}
                     placeholder="https://example.com/image.jpg or upload file"
                     accept="image/*"
                     type="image"
-                    onUpload={(url) => setFieldValue("seo.openGraph.image", url)}
+                    onUpload={(url) => {
+                      setFieldValue("seo.openGraph.image", url);
+                      setUploadingFields(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete("seo.openGraph.image");
+                        return newSet;
+                      });
+                    }}
                     uploading={uploadingFields.has("seo.openGraph.image")}
+                    resetKey={formResetKey}
                   />
                 </Stack>
               </CardContent>
@@ -636,13 +646,13 @@ const UpdateBlogForm = () => {
 
             {/* Banner Section */}
             <Card>
-              <CardContent>
+              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}} >
                 <Typography variant="h6" gutterBottom>Banner</Typography>
                 <Stack spacing={3}>
                   <TextField
                     label="Banner Title"
                     name="banner.title"
-                    value={values.banner.title}
+                    value={values.banner.title || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.banner?.title && errors.banner?.title)}
@@ -656,7 +666,7 @@ const UpdateBlogForm = () => {
                     name="banner.description"
                     multiline
                     rows={2}
-                    value={values.banner.description}
+                    value={values.banner.description || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(
@@ -673,36 +683,54 @@ const UpdateBlogForm = () => {
                   
                   {/* Video URL with Cloudinary upload */}
                   <FileUploadField
+                    key={`video-${formResetKey}`}
                     label="Video URL"
                     name="banner.videoUrl"
                     value={values.banner.videoUrl}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.banner?.videoUrl && errors.banner?.videoUrl)}
-                    helperText={touched.banner?.videoUrl && errors.banner?.videoUrl || undefined}
+                    helperText={touched.banner?.videoUrl && errors.banner?.videoUrl ? String(errors.banner.videoUrl) : undefined}
                     disabled={loading}
                     placeholder="https://example.com/video.mp4 or upload video"
                     accept="video/*"
                     type="video"
-                    onUpload={(url) => setFieldValue("banner.videoUrl", url)}
+                    onUpload={(url) => {
+                      setFieldValue("banner.videoUrl", url);
+                      setUploadingFields(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete("banner.videoUrl");
+                        return newSet;
+                      });
+                    }}
                     uploading={uploadingFields.has("banner.videoUrl")}
+                    resetKey={formResetKey}
                   />
 
                   {/* Poster Image URL with Cloudinary upload */}
                   <FileUploadField
+                    key={`poster-${formResetKey}`}
                     label="Poster Image URL"
                     name="banner.poster"
                     value={values.banner.poster}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.banner?.poster && errors.banner?.poster)}
-                    helperText={String(touched.banner?.poster && errors.banner?.poster) || undefined}
+                    helperText={touched.banner?.poster && errors.banner?.poster ? String(errors.banner.poster) : undefined}
                     disabled={loading}
                     placeholder="https://example.com/poster.jpg or upload image"
                     accept="image/*"
                     type="image"
-                    onUpload={(url) => setFieldValue("banner.poster", url)}
+                    onUpload={(url) => {
+                      setFieldValue("banner.poster", url);
+                      setUploadingFields(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete("banner.poster");
+                        return newSet;
+                      });
+                    }}
                     uploading={uploadingFields.has("banner.poster")}
+                    resetKey={formResetKey}
                   />
                 </Stack>
               </CardContent>
@@ -710,13 +738,13 @@ const UpdateBlogForm = () => {
 
             {/* Content Section */}
             <Card>
-              <CardContent>
+              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}}>
                 <Typography variant="h6" gutterBottom>Content</Typography>
                 <Stack spacing={3}>
                   <TextField
                     label="Content Title"
                     name="content.title"
-                    value={values.content.title}
+                    value={values.content.title || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.content?.title && errors.content?.title)}
@@ -727,33 +755,44 @@ const UpdateBlogForm = () => {
                   
                   {/* Thumbnail Image URL with Cloudinary upload */}
                   <FileUploadField
+                    key={`thumbnail-${formResetKey}`}
                     label="Thumbnail Image URL"
                     name="content.thumbImage"
                     value={values.content.thumbImage}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.content?.thumbImage && errors.content?.thumbImage)}
-                    helperText={String(touched.content?.thumbImage && errors.content?.thumbImage) || undefined}
+                    helperText={touched.content?.thumbImage && errors.content?.thumbImage ? String(errors.content.thumbImage) : undefined}
                     disabled={loading}
                     placeholder="https://example.com/image.jpg or upload image"
                     accept="image/*"
                     type="image"
-                    onUpload={(url) => setFieldValue("content.thumbImage", url)}
+                    onUpload={(url) => {
+                      setFieldValue("content.thumbImage", url);
+                      setUploadingFields(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete("content.thumbImage");
+                        return newSet;
+                      });
+                    }}
                     uploading={uploadingFields.has("content.thumbImage")}
+                    resetKey={formResetKey}
                   />
                   
                   <TextField
                     label="Created Date"
                     name="content.createdDate"
                     type="date"
-                    value={values.content.createdDate}
+                    value={values.content.createdDate || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.content?.createdDate && errors.content?.createdDate)}
                     helperText={touched.content?.createdDate && errors.content?.createdDate}
                     fullWidth
                     disabled={loading}
-                    InputLabelProps={{ shrink: true }}
+                    slotProps={{
+                      inputLabel: { shrink: true }
+                    }}
                   />
                   
                   {/* CTA */}
@@ -763,7 +802,7 @@ const UpdateBlogForm = () => {
                       <TextField
                         label="CTA Slug"
                         name="content.cta.slug"
-                        value={values.content.cta.slug}
+                        value={values.content.cta.slug || ''}
                         onChange={handleChange}
                         onBlur={handleBlur}
                         error={Boolean(touched.content?.cta?.slug && errors.content?.cta?.slug)}
@@ -775,7 +814,7 @@ const UpdateBlogForm = () => {
                       <TextField
                         label="CTA Text"
                         name="content.cta.text"
-                        value={values.content.cta.text}
+                        value={values.content.cta.text || ''}
                         onChange={handleChange}
                         onBlur={handleBlur}
                         error={Boolean(touched.content?.cta?.text && errors.content?.cta?.text)}
@@ -807,7 +846,7 @@ const UpdateBlogForm = () => {
                                   multiline
                                   rows={3}
                                   name={`content.description.${index}.text`}
-                                  value={item.text}
+                                  value={item.text || ''}
                                   onChange={handleChange}
                                   onBlur={handleBlur}
                                   error={Boolean(fieldTouched?.text && errorMessage)}
@@ -865,7 +904,7 @@ const UpdateBlogForm = () => {
                                 <TextField
                                   fullWidth
                                   name={`content.tags.list.${index}.text`}
-                                  value={item.text}
+                                  value={item.text || ''}
                                   onChange={handleChange}
                                   onBlur={handleBlur}
                                   error={Boolean(fieldTouched?.text && errorMessage)}
@@ -925,7 +964,7 @@ const UpdateBlogForm = () => {
                                   <TextField
                                     fullWidth
                                     name={`content.urls.list.${index}.text`}
-                                    value={item.text}
+                                    value={item.text || ''}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
                                     error={Boolean(fieldTouched?.text && textError)}
@@ -936,7 +975,7 @@ const UpdateBlogForm = () => {
                                   <TextField
                                     fullWidth
                                     name={`content.urls.list.${index}.href`}
-                                    value={item.href}
+                                    value={item.href || ''}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
                                     error={Boolean(fieldTouched?.href && hrefError)}
@@ -990,7 +1029,7 @@ const UpdateBlogForm = () => {
                 type="submit" 
                 variant="contained" 
                 size="large"
-                disabled={loading}
+                disabled={loading || success}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                 sx={{ px: 4 }}
               >

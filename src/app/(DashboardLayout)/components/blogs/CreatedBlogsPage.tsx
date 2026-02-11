@@ -508,9 +508,9 @@ const CreatedBlogsPage = () => {
                           <Typography variant="caption" color="text.secondary">
                             Created: {formatDate(blog.created_at)}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          {/* <Typography variant="caption" color="text.secondary">
                             Updated: {formatDate(blog.updated_at)}
-                          </Typography>
+                          </Typography> */}
                         </Stack>
                       </TableCell>
 

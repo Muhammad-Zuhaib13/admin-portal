@@ -127,7 +127,8 @@ const FileUploadField = ({
   accept,
   type = 'image',
   onUpload,
-  uploading
+  uploading,
+  resetKey
 }: {
   label: string;
   name: string;
@@ -142,6 +143,7 @@ const FileUploadField = ({
   type?: 'image' | 'video';
   onUpload: (url: string) => void;
   uploading: boolean;
+  resetKey?: string | number;
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [localUploading, setLocalUploading] = useState(false);
@@ -168,39 +170,41 @@ const FileUploadField = ({
   const isUploading = uploading || localUploading;
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: '100%' }} key={resetKey}>
       <TextField
         fullWidth
         label={label}
         name={name}
-        value={value}
+        value={value || ''} // Fix: Ensure value is never undefined
         onChange={onChange}
         onBlur={onBlur}
         error={error}
         helperText={helperText}
         disabled={disabled || isUploading}
         placeholder={placeholder}
-        InputProps={{
-          endAdornment: (
-            <Button
-              component="label"
-              variant="outlined"
-              size="small"
-              startIcon={isUploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
-              disabled={disabled || isUploading}
-              sx={{ ml: 1, flexShrink: '0' }}
-            >
-              Upload
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={accept}
-                hidden
-                onChange={handleFileUpload}
+        slotProps={{ // Fix: Use slotProps instead of InputProps for MUI v6+
+          input: {
+            endAdornment: (
+              <Button
+                component="label"
+                variant="outlined"
+                size="small"
+                startIcon={isUploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
                 disabled={disabled || isUploading}
-              />
-            </Button>
-          ),
+                sx={{ ml: 1, flexShrink: '0' }}
+              >
+                Upload
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={accept}
+                  hidden
+                  onChange={handleFileUpload}
+                  disabled={disabled || isUploading}
+                />
+              </Button>
+            ),
+          }
         }}
       />
       {isUploading && (
@@ -223,6 +227,7 @@ const UpdateSEOBannersForm = () => {
   const [success, setSuccess] = useState(false);
   const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
   const [initialValues, setInitialValues] = useState(emptyInitialValues);
+  const [formResetKey, setFormResetKey] = useState(Date.now());
 
   // Fetch SEO Banner data when component mounts
   useEffect(() => {
@@ -234,7 +239,7 @@ const UpdateSEOBannersForm = () => {
       
       try {
         const { data, error: supabaseError } = await supabase
-          .from("seo_banners") // Changed from "blogs" to "seo_banners"
+          .from("seo_banners")
           .select("*")
           .eq("id", bannerId)
           .single();
@@ -273,6 +278,8 @@ const UpdateSEOBannersForm = () => {
         };
          
         setInitialValues(transformedData);
+        // Reset the form key when new data loads
+        setFormResetKey(Date.now());
       } catch (err: any) {
         console.error("Error fetching SEO Banner:", err);
         setError(err.message || "Failed to load SEO Banner data");
@@ -305,7 +312,7 @@ const UpdateSEOBannersForm = () => {
 
       // Update in Supabase
       const { data, error: supabaseError } = await supabase
-        .from("seo_banners") // Changed from "blogs" to "seo_banners"
+        .from("seo_banners")
         .update(seoBannerData)
         .eq("id", bannerId)
         .select();
@@ -326,16 +333,16 @@ const UpdateSEOBannersForm = () => {
   };
 
   const handleGoBack = () => {
-    router.push("/created-seo-banners"); // Updated route
+    router.push("/created-seo-banners");
   };
 
   const handleFileUpload = (fieldName: string, url: string, setFieldValue: any) => {
+    setFieldValue(fieldName, url);
     setUploadingFields(prev => {
       const newSet = new Set(prev);
       newSet.delete(fieldName);
       return newSet;
     });
-    setFieldValue(fieldName, url);
   };
 
   if (fetching) {
@@ -356,7 +363,7 @@ const UpdateSEOBannersForm = () => {
       validateOnChange={false}
       validateOnBlur={true}
       onSubmit={handleSubmit}
-      enableReinitialize // Important: This allows the form to reinitialize when initialValues change
+      enableReinitialize={true} // Important: This allows the form to reinitialize when initialValues change
     >
       {({ values, handleChange, handleBlur, touched, errors, resetForm, setFieldValue }) => (
         <Form>
@@ -405,13 +412,13 @@ const UpdateSEOBannersForm = () => {
 
             {/* SEO Section */}
             <Card>
-              <CardContent>
+              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}}>
                 <Typography variant="h6" gutterBottom>SEO Settings</Typography>
                 <Stack spacing={3}>
                   <TextField
                     label="SEO Title"
                     name="seo.title"
-                    value={values.seo.title}
+                    value={values.seo.title || ''} // Fix: Add fallback
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.title && errors.seo?.title)}
@@ -425,7 +432,7 @@ const UpdateSEOBannersForm = () => {
                     name="seo.description"
                     multiline
                     rows={3}
-                    value={values.seo.description}
+                    value={values.seo.description || ''} // Fix: Add fallback
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.description && errors.seo?.description)}
@@ -437,7 +444,7 @@ const UpdateSEOBannersForm = () => {
                   <TextField
                     label="Keywords"
                     name="seo.keywords"
-                    value={values.seo.keywords}
+                    value={values.seo.keywords || ''} // Fix: Add fallback
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.keywords && errors.seo?.keywords)}
@@ -450,7 +457,7 @@ const UpdateSEOBannersForm = () => {
                   <TextField
                     label="Canonical URL"
                     name="seo.canonicalURL"
-                    value={values.seo.canonicalURL}
+                    value={values.seo.canonicalURL || ''} // Fix: Add fallback
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.canonicalURL && errors.seo?.canonicalURL)}
@@ -465,7 +472,7 @@ const UpdateSEOBannersForm = () => {
                   <TextField
                     label="OG Title"
                     name="seo.openGraph.title"
-                    value={values.seo.openGraph.title}
+                    value={values.seo.openGraph.title || ''} // Fix: Add fallback
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(
@@ -483,7 +490,7 @@ const UpdateSEOBannersForm = () => {
                   <TextField
                     label="OG Description"
                     name="seo.openGraph.description"
-                    value={values.seo.openGraph.description}
+                    value={values.seo.openGraph.description || ''} // Fix: Add fallback
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(
@@ -501,7 +508,7 @@ const UpdateSEOBannersForm = () => {
                   <TextField
                     label="OG URL"
                     name="seo.openGraph.url"
-                    value={values.seo.openGraph.url}
+                    value={values.seo.openGraph.url || ''} // Fix: Add fallback
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(
@@ -518,19 +525,28 @@ const UpdateSEOBannersForm = () => {
 
                   {/* OG Image with Cloudinary upload */}
                   <FileUploadField
+                    key={`og-image-${formResetKey}`} // Fix: Add key for reset
                     label="OG Image"
                     name="seo.openGraph.image"
                     value={values.seo.openGraph.image}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.openGraph?.image && errors.seo?.openGraph?.image)}
-                    helperText={String(touched.seo?.openGraph?.image && errors.seo?.openGraph?.image) || undefined}
+                    helperText={touched.seo?.openGraph?.image && errors.seo?.openGraph?.image ? String(errors.seo.openGraph.image) : undefined} // Fix: Proper helperText
                     disabled={loading}
                     placeholder="https://example.com/image.jpg or upload file"
                     accept="image/*"
                     type="image"
-                    onUpload={(url) => setFieldValue("seo.openGraph.image", url)}
+                    onUpload={(url) => {
+                      setFieldValue("seo.openGraph.image", url);
+                      setUploadingFields(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete("seo.openGraph.image");
+                        return newSet;
+                      });
+                    }}
                     uploading={uploadingFields.has("seo.openGraph.image")}
+                    resetKey={formResetKey}
                   />
                 </Stack>
               </CardContent>
@@ -538,13 +554,13 @@ const UpdateSEOBannersForm = () => {
 
             {/* Banner Section */}
             <Card>
-              <CardContent>
+              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}}>
                 <Typography variant="h6" gutterBottom>Banner</Typography>
                 <Stack spacing={3}>
                   <TextField
                     label="Banner Title"
                     name="banner.title"
-                    value={values.banner.title}
+                    value={values.banner.title || ''} // Fix: Add fallback
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.banner?.title && errors.banner?.title)}
@@ -558,7 +574,7 @@ const UpdateSEOBannersForm = () => {
                     name="banner.description"
                     multiline
                     rows={2}
-                    value={values.banner.description}
+                    value={values.banner.description || ''} // Fix: Add fallback
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(
@@ -575,36 +591,54 @@ const UpdateSEOBannersForm = () => {
                   
                   {/* Video URL with Cloudinary upload */}
                   <FileUploadField
+                    key={`video-${formResetKey}`} // Fix: Add key for reset
                     label="Video URL"
                     name="banner.videoUrl"
                     value={values.banner.videoUrl}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.banner?.videoUrl && errors.banner?.videoUrl)}
-                    helperText={touched.banner?.videoUrl && errors.banner?.videoUrl || undefined}
+                    helperText={touched.banner?.videoUrl && errors.banner?.videoUrl ? String(errors.banner.videoUrl) : undefined} // Fix: Proper helperText
                     disabled={loading}
                     placeholder="https://example.com/video.mp4 or upload video"
                     accept="video/*"
                     type="video"
-                    onUpload={(url) => setFieldValue("banner.videoUrl", url)}
+                    onUpload={(url) => {
+                      setFieldValue("banner.videoUrl", url);
+                      setUploadingFields(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete("banner.videoUrl");
+                        return newSet;
+                      });
+                    }}
                     uploading={uploadingFields.has("banner.videoUrl")}
+                    resetKey={formResetKey}
                   />
 
                   {/* Poster Image URL with Cloudinary upload */}
                   <FileUploadField
+                    key={`poster-${formResetKey}`} // Fix: Add key for reset
                     label="Poster Image URL"
                     name="banner.poster"
                     value={values.banner.poster}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.banner?.poster && errors.banner?.poster)}
-                    helperText={String(touched.banner?.poster && errors.banner?.poster) || undefined}
+                    helperText={touched.banner?.poster && errors.banner?.poster ? String(errors.banner.poster) : undefined} // Fix: Proper helperText
                     disabled={loading}
                     placeholder="https://example.com/poster.jpg or upload image"
                     accept="image/*"
                     type="image"
-                    onUpload={(url) => setFieldValue("banner.poster", url)}
+                    onUpload={(url) => {
+                      setFieldValue("banner.poster", url);
+                      setUploadingFields(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete("banner.poster");
+                        return newSet;
+                      });
+                    }}
                     uploading={uploadingFields.has("banner.poster")}
+                    resetKey={formResetKey}
                   />
                 </Stack>
               </CardContent>
@@ -623,7 +657,7 @@ const UpdateSEOBannersForm = () => {
                 type="submit" 
                 variant="contained" 
                 size="large"
-                disabled={loading}
+                disabled={loading || success}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                 sx={{ px: 4 }}
               >

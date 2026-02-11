@@ -625,9 +625,9 @@ const CreatedPortfolioPage = () => {
                               Created: {formatDate(portfolio.created_at)}
                             </Typography>
                           </Stack>
-                          <Typography variant="caption" color="text.secondary">
+                          {/* <Typography variant="caption" color="text.secondary">
                             Updated: {formatDate(portfolio.updated_at)}
-                          </Typography>
+                          </Typography> */}
                         </Stack>
                       </TableCell>
 

@@ -38,8 +38,8 @@ const imageValidation = Yup.object().shape({
   image: Yup.string().optional(),
   alt: Yup.string().when('image', {
     is: (image: string) => image && image.trim().length > 0,
-    then: (schema:any) => schema.required('Alt text is required when image is provided'),
-    otherwise: (schema:any) => schema.optional()
+    then: (schema: any) => schema.required('Alt text is required when image is provided'),
+    otherwise: (schema: any) => schema.optional()
   })
 });
 
@@ -48,8 +48,8 @@ const videoValidation = Yup.object().shape({
   video: Yup.string().optional(),
   poster: Yup.string().when('video', {
     is: (video: string) => video && video.trim().length > 0,
-    then: (schema:any) => schema.required('Poster is required when video is provided'),
-    otherwise: (schema:any) => schema.optional()
+    then: (schema: any) => schema.required('Poster is required when video is provided'),
+    otherwise: (schema: any) => schema.optional()
   })
 });
 
@@ -94,11 +94,11 @@ const validationSchema = Yup.object({
         tabTitle: Yup.string().required("Tab title is required"),
         key: Yup.string().oneOf(["image", "video"]).required("Tab type is required"),
         list: Yup.array().of(
-          Yup.lazy((value:any, context:any) => {
+          Yup.lazy((value: any, context: any) => {
             const path = context.path;
             const tabIndex = parseInt(path.split('.')[2]);
             const tab = context.from?.[2]?.value?.content?.imageVideoTabsGallery?.[tabIndex];
-            
+
             if (tab?.key === 'image') {
               return imageValidation;
             } else {
@@ -165,16 +165,16 @@ const validateForm = (values: typeof emptyInitialValues) => {
     const imageGalleryErrors: any[] = [];
     values.content.imageGallery?.forEach((item, index) => {
       const itemErrors: any = {};
-      
+
       if (item.image && !item.alt) {
         itemErrors.alt = "Alt text is required when image is provided";
       }
-      
+
       if (Object.keys(itemErrors).length > 0) {
         imageGalleryErrors[index] = itemErrors;
       }
     });
-    
+
     if (imageGalleryErrors.length > 0) {
       if (!errors.content) errors.content = {};
       errors.content.imageGallery = imageGalleryErrors;
@@ -183,16 +183,16 @@ const validateForm = (values: typeof emptyInitialValues) => {
     const videoGalleryErrors: any[] = [];
     values.content.videoGallery?.forEach((item, index) => {
       const itemErrors: any = {};
-      
+
       if (item.video && !item.poster) {
         itemErrors.poster = "Poster is required when video is provided";
       }
-      
+
       if (Object.keys(itemErrors).length > 0) {
         videoGalleryErrors[index] = itemErrors;
       }
     });
-    
+
     if (videoGalleryErrors.length > 0) {
       if (!errors.content) errors.content = {};
       errors.content.videoGallery = videoGalleryErrors;
@@ -202,21 +202,21 @@ const validateForm = (values: typeof emptyInitialValues) => {
     values.content.imageVideoTabsGallery?.forEach((tab, tabIndex) => {
       const tabErrors: any = {};
       const listErrors: any[] = [];
-      
+
       // Validate tab title
       if (!tab.tabTitle) {
         tabErrors.tabTitle = "Tab title is required";
       }
-      
+
       // Validate tab key
       if (!tab.key) {
         tabErrors.key = "Tab type is required";
       }
-      
+
       // Validate list items
       tab.list?.forEach((item, itemIndex) => {
         const itemErrors: any = {};
-        
+
         if (tab.key === 'image') {
           const imageItem = item as any;
           if (imageItem.image && !imageItem.alt) {
@@ -228,12 +228,12 @@ const validateForm = (values: typeof emptyInitialValues) => {
             itemErrors.poster = "Poster is required when video is provided";
           }
         }
-        
+
         if (Object.keys(itemErrors).length > 0) {
           listErrors[itemIndex] = itemErrors;
         }
       });
-      
+
       if (Object.keys(tabErrors).length > 0 || listErrors.length > 0) {
         tabsErrors[tabIndex] = {
           ...tabErrors,
@@ -241,7 +241,7 @@ const validateForm = (values: typeof emptyInitialValues) => {
         };
       }
     });
-    
+
     if (tabsErrors.length > 0) {
       if (!errors.content) errors.content = {};
       errors.content.imageVideoTabsGallery = tabsErrors;
@@ -260,12 +260,12 @@ const uploadToCloudinary = async (file: File, type: 'image' | 'video') => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  
+
   // Optional: Add folder for organization
   formData.append('folder', 'portfolio');
-  
+
   let cloudinaryUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/`;
-  
+
   if (type === 'image') {
     cloudinaryUrl += 'image/upload';
   } else if (type === 'video') {
@@ -294,20 +294,21 @@ const uploadToCloudinary = async (file: File, type: 'image' | 'video') => {
 };
 
 // File input component for Cloudinary upload
-const FileUploadField = ({ 
-  label, 
-  name, 
-  value, 
-  onChange, 
-  onBlur, 
-  error, 
-  helperText, 
+const FileUploadField = ({
+  label,
+  name,
+  value,
+  onChange,
+  onBlur,
+  error,
+  helperText,
   disabled,
   placeholder,
   accept,
   type = 'image',
   onUpload,
-  uploading
+  uploading,
+  resetKey
 }: {
   label: string;
   name: string;
@@ -322,6 +323,7 @@ const FileUploadField = ({
   type?: 'image' | 'video';
   onUpload: (url: string) => void;
   uploading: boolean;
+  resetKey?: string | number;
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [localUploading, setLocalUploading] = React.useState(false);
@@ -348,39 +350,41 @@ const FileUploadField = ({
   const isUploading = uploading || localUploading;
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: '100%' }} key={resetKey}>
       <TextField
         fullWidth
         label={label}
         name={name}
-        value={value}
+        value={value || ''}
         onChange={onChange}
         onBlur={onBlur}
         error={error}
         helperText={helperText}
         disabled={disabled || isUploading}
         placeholder={placeholder}
-        InputProps={{
-          endAdornment: (
-            <Button
-              component="label"
-              variant="outlined"
-              size="small"
-              startIcon={isUploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
-              disabled={disabled || isUploading}
-              sx={{ ml: 1, flexShrink:'0', }}
-            >
-              Upload
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={accept}
-                hidden
-                onChange={handleFileUpload}
+        slotProps={{
+          input: {
+            endAdornment: (
+              <Button
+                component="label"
+                variant="outlined"
+                size="small"
+                startIcon={isUploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
                 disabled={disabled || isUploading}
-              />
-            </Button>
-          ),
+                sx={{ ml: 1, flexShrink: '0' }}
+              >
+                Upload
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={accept}
+                  hidden
+                  onChange={handleFileUpload}
+                  disabled={disabled || isUploading}
+                />
+              </Button>
+            ),
+          }
         }}
       />
       {isUploading && (
@@ -396,7 +400,7 @@ const UpdatedPortfolioForm = () => {
   const params = useParams();
   const router = useRouter();
   const portfolioId = params.id;
-  
+
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -404,15 +408,16 @@ const UpdatedPortfolioForm = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
   const [initialValues, setInitialValues] = useState(emptyInitialValues);
+  const [formResetKey, setFormResetKey] = useState(Date.now());
 
   // Fetch portfolio data when component mounts
   useEffect(() => {
     const fetchPortfolioData = async () => {
       if (!portfolioId) return;
-      
+
       setFetching(true);
       setError(null);
-      
+
       try {
         const { data, error: supabaseError } = await supabase
           .from("portfolio")
@@ -458,46 +463,48 @@ const UpdatedPortfolioForm = () => {
               pageUrl: "",
               cardBackgroundImage: ""
             },
-            imageGallery: data.content?.imageGallery?.length 
-              ? data.content.imageGallery.map((item: any) => ({ 
-                  image: item.image || "",
-                  alt: item.alt || "",
-                  id: item.id || undefined 
-                }))
+            imageGallery: data.content?.imageGallery?.length
+              ? data.content.imageGallery.map((item: any) => ({
+                image: item.image || "",
+                alt: item.alt || "",
+                id: item.id || undefined
+              }))
               : [{ image: "", alt: "" }],
-            videoGallery: data.content?.videoGallery?.length 
-              ? data.content.videoGallery.map((item: any) => ({ 
-                  video: item.video || "",
-                  poster: item.poster || "",
-                  id: item.id || undefined 
-                }))
+            videoGallery: data.content?.videoGallery?.length
+              ? data.content.videoGallery.map((item: any) => ({
+                video: item.video || "",
+                poster: item.poster || "",
+                id: item.id || undefined
+              }))
               : [{ video: "", poster: "" }],
-            imageVideoTabsGallery: data.content?.imageVideoTabsGallery?.length 
+            imageVideoTabsGallery: data.content?.imageVideoTabsGallery?.length
               ? data.content.imageVideoTabsGallery.map((tab: any) => ({
-                  tabTitle: tab.tabTitle || "",
-                  key: tab.key || "image",
-                  list: tab.list?.length 
-                    ? tab.list.map((item: any) => ({
-                        ...(tab.key === 'image' 
-                          ? { image: item.image || "", alt: item.alt || "" }
-                          : { video: item.video || "", poster: item.poster || "" }
-                        ),
-                        id: item.id || undefined
-                      }))
-                    : tab.key === 'image' 
-                      ? [{ image: "", alt: "" }]
-                      : [{ video: "", poster: "" }],
-                  id: tab.id || undefined
-                }))
+                tabTitle: tab.tabTitle || "",
+                key: tab.key || "image",
+                list: tab.list?.length
+                  ? tab.list.map((item: any) => ({
+                    ...(tab.key === 'image'
+                      ? { image: item.image || "", alt: item.alt || "" }
+                      : { video: item.video || "", poster: item.poster || "" }
+                    ),
+                    id: item.id || undefined
+                  }))
+                  : tab.key === 'image'
+                    ? [{ image: "", alt: "" }]
+                    : [{ video: "", poster: "" }],
+                id: tab.id || undefined
+              }))
               : [{
-                  tabTitle: "",
-                  key: "image",
-                  list: [{ image: "", alt: "" }],
-                }],
+                tabTitle: "",
+                key: "image",
+                list: [{ image: "", alt: "" }],
+              }],
           },
         };
-         
+
         setInitialValues(transformedData);
+        // Reset the form key when new data loads
+        setFormResetKey(Date.now());
       } catch (err: any) {
         console.error("Error fetching portfolio:", err);
         setError(err.message || "Failed to load portfolio data");
@@ -508,7 +515,7 @@ const UpdatedPortfolioForm = () => {
 
     fetchPortfolioData();
   }, [portfolioId]);
-  
+
   const handleSubmit = async (values: typeof emptyInitialValues, { setErrors }: any) => {
     if (!portfolioId) {
       setError("Portfolio ID is missing");
@@ -553,7 +560,7 @@ const UpdatedPortfolioForm = () => {
 
       console.log("Portfolio updated successfully:", data);
       setSuccess(true);
-      
+
     } catch (err: any) {
       console.error("Error updating portfolio:", err);
       setError(err.message || "Failed to update portfolio");
@@ -571,16 +578,12 @@ const UpdatedPortfolioForm = () => {
   };
 
   const handleFileUpload = React.useCallback((fieldName: string, url: string, setFieldValue: any) => {
+    setFieldValue(fieldName, url);
     setUploadingFields(prev => {
       const newSet = new Set(prev);
       newSet.delete(fieldName);
       return newSet;
     });
-    setFieldValue(fieldName, url);
-  }, []);
-
-  const startUpload = React.useCallback((fieldName: string) => {
-    setUploadingFields(prev => new Set(prev).add(fieldName));
   }, []);
 
   if (fetching) {
@@ -597,20 +600,19 @@ const UpdatedPortfolioForm = () => {
   return (
     <Formik
       initialValues={initialValues}
-      validationSchema={validationSchema} // This now includes card validation
+      validationSchema={validationSchema}
       validateOnChange={false}
       validateOnBlur={true}
       onSubmit={handleSubmit}
-      // Add validate prop to handle custom validation on form level
       validate={(values) => {
         return validateForm(values);
       }}
-      enableReinitialize // Important: This allows the form to reinitialize when initialValues change
+      enableReinitialize={true}
     >
-      {({ values, handleChange, handleBlur, touched, errors, resetForm, setFieldValue, validateForm }) => (
+      {({ values, handleChange, handleBlur, touched, errors, setFieldValue }) => (
         <Form>
           <Stack spacing={4} sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
-            
+
             {/* Header with Back Button */}
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Button
@@ -627,12 +629,12 @@ const UpdatedPortfolioForm = () => {
 
             {/* Status Messages */}
             {success && (
-              <Alert 
+              <Alert
                 severity="success"
                 action={
-                  <Button 
-                    color="inherit" 
-                    size="small" 
+                  <Button
+                    color="inherit"
+                    size="small"
                     onClick={() => {
                       setSuccess(false);
                       router.push("/created-portfolio");
@@ -654,13 +656,13 @@ const UpdatedPortfolioForm = () => {
 
             {/* SEO Section */}
             <Card>
-              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}}>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 <Typography variant="h6" gutterBottom>SEO Settings</Typography>
                 <Stack spacing={3}>
                   <TextField
                     label="SEO Title"
                     name="seo.title"
-                    value={values.seo.title}
+                    value={values.seo.title || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.title && errors.seo?.title)}
@@ -674,7 +676,7 @@ const UpdatedPortfolioForm = () => {
                     name="seo.description"
                     multiline
                     rows={3}
-                    value={values.seo.description}
+                    value={values.seo.description || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.description && errors.seo?.description)}
@@ -686,7 +688,7 @@ const UpdatedPortfolioForm = () => {
                   <TextField
                     label="Keywords"
                     name="seo.keywords"
-                    value={values.seo.keywords}
+                    value={values.seo.keywords || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.keywords && errors.seo?.keywords)}
@@ -699,7 +701,7 @@ const UpdatedPortfolioForm = () => {
                   <TextField
                     label="Canonical URL"
                     name="seo.canonicalURL"
-                    value={values.seo.canonicalURL}
+                    value={values.seo.canonicalURL || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.canonicalURL && errors.seo?.canonicalURL)}
@@ -714,7 +716,7 @@ const UpdatedPortfolioForm = () => {
                   <TextField
                     label="OG Title"
                     name="seo.openGraph.title"
-                    value={values.seo.openGraph.title}
+                    value={values.seo.openGraph.title || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.openGraph?.title && errors.seo?.openGraph?.title)}
@@ -726,7 +728,7 @@ const UpdatedPortfolioForm = () => {
                   <TextField
                     label="OG Description"
                     name="seo.openGraph.description"
-                    value={values.seo.openGraph.description}
+                    value={values.seo.openGraph.description || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.openGraph?.description && errors.seo?.openGraph?.description)}
@@ -738,7 +740,7 @@ const UpdatedPortfolioForm = () => {
                   <TextField
                     label="OG URL"
                     name="seo.openGraph.url"
-                    value={values.seo.openGraph.url}
+                    value={values.seo.openGraph.url || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.openGraph?.url && errors.seo?.openGraph?.url)}
@@ -749,19 +751,28 @@ const UpdatedPortfolioForm = () => {
 
                   {/* OG Image with Cloudinary upload */}
                   <FileUploadField
+                    key={`og-image-${formResetKey}`}
                     label="OG Image"
                     name="seo.openGraph.image"
                     value={values.seo.openGraph.image}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.seo?.openGraph?.image && errors.seo?.openGraph?.image)}
-                    helperText={String(touched.seo?.openGraph?.image && errors.seo?.openGraph?.image) || undefined}
+                    helperText={touched.seo?.openGraph?.image && errors.seo?.openGraph?.image ? String(errors.seo.openGraph.image) : undefined}
                     disabled={loading}
                     placeholder="https://example.com/image.jpg or upload file"
                     accept="image/*"
                     type="image"
-                    onUpload={(url) => setFieldValue("seo.openGraph.image", url)}
+                    onUpload={(url) => {
+                      setFieldValue("seo.openGraph.image", url);
+                      setUploadingFields(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete("seo.openGraph.image");
+                        return newSet;
+                      });
+                    }}
                     uploading={uploadingFields.has("seo.openGraph.image")}
+                    resetKey={formResetKey}
                   />
                 </Stack>
               </CardContent>
@@ -769,13 +780,13 @@ const UpdatedPortfolioForm = () => {
 
             {/* Banner Section */}
             <Card>
-              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}}>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 <Typography variant="h6" gutterBottom>Banner</Typography>
                 <Stack spacing={3}>
                   <TextField
                     label="Banner Title"
                     name="banner.title"
-                    value={values.banner.title}
+                    value={values.banner.title || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.banner?.title && errors.banner?.title)}
@@ -789,7 +800,7 @@ const UpdatedPortfolioForm = () => {
                     name="banner.description"
                     multiline
                     rows={2}
-                    value={values.banner.description}
+                    value={values.banner.description || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.banner?.description && errors.banner?.description)}
@@ -800,36 +811,54 @@ const UpdatedPortfolioForm = () => {
 
                   {/* Banner Video URL with Cloudinary upload */}
                   <FileUploadField
+                    key={`video-${formResetKey}`}
                     label="Video URL"
                     name="banner.videoUrl"
                     value={values.banner.videoUrl}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.banner?.videoUrl && errors.banner?.videoUrl)}
-                    helperText={touched.banner?.videoUrl && errors.banner?.videoUrl || undefined}
+                    helperText={touched.banner?.videoUrl && errors.banner?.videoUrl ? String(errors.banner.videoUrl) : undefined}
                     disabled={loading}
                     placeholder="https://example.com/video.mp4 or upload video"
                     accept="video/*"
                     type="video"
-                    onUpload={(url) => setFieldValue("banner.videoUrl", url)}
+                    onUpload={(url) => {
+                      setFieldValue("banner.videoUrl", url);
+                      setUploadingFields(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete("banner.videoUrl");
+                        return newSet;
+                      });
+                    }}
                     uploading={uploadingFields.has("banner.videoUrl")}
+                    resetKey={formResetKey}
                   />
 
                   {/* Banner Poster with Cloudinary upload */}
                   <FileUploadField
+                    key={`poster-${formResetKey}`}
                     label="Poster Image URL"
                     name="banner.poster"
                     value={values.banner.poster}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.banner?.poster && errors.banner?.poster)}
-                    helperText={String(touched.banner?.poster && errors.banner?.poster) || undefined}
+                    helperText={touched.banner?.poster && errors.banner?.poster ? String(errors.banner.poster) : undefined}
                     disabled={loading}
                     placeholder="https://example.com/poster.jpg or upload image"
                     accept="image/*"
                     type="image"
-                    onUpload={(url) => setFieldValue("banner.poster", url)}
+                    onUpload={(url) => {
+                      setFieldValue("banner.poster", url);
+                      setUploadingFields(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete("banner.poster");
+                        return newSet;
+                      });
+                    }}
                     uploading={uploadingFields.has("banner.poster")}
+                    resetKey={formResetKey}
                   />
                 </Stack>
               </CardContent>
@@ -837,7 +866,7 @@ const UpdatedPortfolioForm = () => {
 
             {/* CARD Section - Added above Gallery Type */}
             <Card>
-              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}}>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 <Typography variant="h6" gutterBottom>Card</Typography>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   All fields in this section are required.
@@ -846,46 +875,53 @@ const UpdatedPortfolioForm = () => {
                   <TextField
                     label="CTA Text *"
                     name="content.card.ctaText"
-                    value={values.content.card?.ctaText || ""}
+                    value={values.content.card?.ctaText || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.content?.card?.ctaText && errors.content?.card?.ctaText)}
                     helperText={touched.content?.card?.ctaText && errors.content?.card?.ctaText}
                     fullWidth
                     disabled={loading}
-                   
                     placeholder="e.g., Learn More, Get Started, View Details"
                   />
 
                   <TextField
                     label="Page URL *"
                     name="content.card.pageUrl"
-                    value={values.content.card?.pageUrl || ""}
+                    value={values.content.card?.pageUrl || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.content?.card?.pageUrl && errors.content?.card?.pageUrl)}
                     helperText={touched.content?.card?.pageUrl && errors.content?.card?.pageUrl}
                     fullWidth
                     disabled={loading}
-                  
                     placeholder="https://example.com/page"
                   />
 
                   {/* Card Background Image with Cloudinary upload */}
                   <FileUploadField
+                    key={`card-bg-${formResetKey}`}
                     label="Background Image *"
                     name="content.card.cardBackgroundImage"
-                    value={values.content.card?.cardBackgroundImage || ""}
+                    value={values.content.card?.cardBackgroundImage || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.content?.card?.cardBackgroundImage && errors.content?.card?.cardBackgroundImage)}
-                    helperText={String(touched.content?.card?.cardBackgroundImage && errors.content?.card?.cardBackgroundImage) || undefined}
+                    helperText={touched.content?.card?.cardBackgroundImage && errors.content?.card?.cardBackgroundImage ? String(errors.content.card.cardBackgroundImage) : undefined}
                     disabled={loading}
                     placeholder="https://example.com/background.jpg or upload image"
                     accept="image/*"
                     type="image"
-                    onUpload={(url) => setFieldValue("content.card.cardBackgroundImage", url)}
+                    onUpload={(url) => {
+                      setFieldValue("content.card.cardBackgroundImage", url);
+                      setUploadingFields(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete("content.card.cardBackgroundImage");
+                        return newSet;
+                      });
+                    }}
                     uploading={uploadingFields.has("content.card.cardBackgroundImage")}
+                    resetKey={formResetKey}
                   />
                 </Stack>
               </CardContent>
@@ -893,14 +929,14 @@ const UpdatedPortfolioForm = () => {
 
             {/* Gallery Type Selection */}
             <Card>
-              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}}>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 <Typography variant="h6" gutterBottom>Gallery Type</Typography>
                 <FormControl fullWidth disabled={loading}>
                   <InputLabel id="gallery-type-label">Select Gallery Type</InputLabel>
                   <Select
                     labelId="gallery-type-label"
                     name="key"
-                    value={values.key}
+                    value={values.key || ''}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touched.key && errors.key)}
@@ -921,7 +957,7 @@ const UpdatedPortfolioForm = () => {
 
             {/* Content Section - Dynamic based on selection */}
             <Card>
-              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}}>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 <Typography variant="h6" gutterBottom>Content</Typography>
 
                 {values.key === "imageGallery" && (
@@ -945,6 +981,7 @@ const UpdatedPortfolioForm = () => {
                               <Stack spacing={2} key={index}>
                                 <Stack direction="row" spacing={1} alignItems="flex-start">
                                   <FileUploadField
+                                    key={`image-gallery-${formResetKey}-${index}`}
                                     label="Image URL"
                                     name={imageFieldName}
                                     value={item.image}
@@ -956,14 +993,22 @@ const UpdatedPortfolioForm = () => {
                                     placeholder="https://example.com/image.jpg or upload image"
                                     accept="image/*"
                                     type="image"
-                                    onUpload={(url) => setFieldValue(imageFieldName, url)}
+                                    onUpload={(url) => {
+                                      setFieldValue(imageFieldName, url);
+                                      setUploadingFields(prev => {
+                                        const newSet = new Set(prev);
+                                        newSet.delete(imageFieldName);
+                                        return newSet;
+                                      });
+                                    }}
                                     uploading={uploadingFields.has(imageFieldName)}
+                                    resetKey={`${formResetKey}-${index}`}
                                   />
                                   <TextField
                                     fullWidth
                                     label="Alt Text"
                                     name={`content.imageGallery.${index}.alt`}
-                                    value={item.alt}
+                                    value={item.alt || ''}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
                                     error={Boolean(hasImage && fieldTouched?.alt && fieldError?.alt)}
@@ -1019,6 +1064,7 @@ const UpdatedPortfolioForm = () => {
                               <Stack spacing={2} key={index}>
                                 <Stack direction="row" spacing={1} alignItems="flex-start">
                                   <FileUploadField
+                                    key={`video-gallery-video-${formResetKey}-${index}`}
                                     label="Video URL"
                                     name={videoFieldName}
                                     value={item.video}
@@ -1030,10 +1076,19 @@ const UpdatedPortfolioForm = () => {
                                     placeholder="https://example.com/video.mp4 or upload video"
                                     accept="video/*"
                                     type="video"
-                                    onUpload={(url) => setFieldValue(videoFieldName, url)}
+                                    onUpload={(url) => {
+                                      setFieldValue(videoFieldName, url);
+                                      setUploadingFields(prev => {
+                                        const newSet = new Set(prev);
+                                        newSet.delete(videoFieldName);
+                                        return newSet;
+                                      });
+                                    }}
                                     uploading={uploadingFields.has(videoFieldName)}
+                                    resetKey={`${formResetKey}-${index}`}
                                   />
                                   <FileUploadField
+                                    key={`video-gallery-poster-${formResetKey}-${index}`}
                                     label="Poster URL"
                                     name={posterFieldName}
                                     value={item.poster}
@@ -1045,8 +1100,16 @@ const UpdatedPortfolioForm = () => {
                                     placeholder="https://example.com/poster.jpg or upload image"
                                     accept="image/*"
                                     type="image"
-                                    onUpload={(url) => setFieldValue(posterFieldName, url)}
+                                    onUpload={(url) => {
+                                      setFieldValue(posterFieldName, url);
+                                      setUploadingFields(prev => {
+                                        const newSet = new Set(prev);
+                                        newSet.delete(posterFieldName);
+                                        return newSet;
+                                      });
+                                    }}
                                     uploading={uploadingFields.has(posterFieldName)}
+                                    resetKey={`${formResetKey}-${index}-poster`}
                                   />
                                   <IconButton
                                     onClick={() => remove(index)}
@@ -1148,7 +1211,7 @@ const UpdatedPortfolioForm = () => {
                                     fullWidth
                                     label="Tab Title *"
                                     name={`content.imageVideoTabsGallery.${tabIndex}.tabTitle`}
-                                    value={tab.tabTitle}
+                                    value={tab.tabTitle || ''}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
                                     error={Boolean(
@@ -1167,7 +1230,7 @@ const UpdatedPortfolioForm = () => {
                                     <InputLabel>Tab Type *</InputLabel>
                                     <Select
                                       name={`content.imageVideoTabsGallery.${tabIndex}.key`}
-                                      value={tab.key}
+                                      value={tab.key || 'image'}
                                       onChange={handleChange}
                                       onBlur={handleBlur}
                                       label="Tab Type *"
@@ -1198,15 +1261,15 @@ const UpdatedPortfolioForm = () => {
                                         {tab.list.map((item, itemIndex) => {
                                           const isImageTab = tab.key === 'image';
                                           const itemData = item as any;
-                                          const hasMedia = isImageTab ? 
-                                            (itemData.image && itemData.image.trim().length > 0) : 
+                                          const hasMedia = isImageTab ?
+                                            (itemData.image && itemData.image.trim().length > 0) :
                                             (itemData.video && itemData.video.trim().length > 0);
-                                          
+
                                           const tabErrors = errors.content?.imageVideoTabsGallery?.[tabIndex] as any;
                                           const fieldError = tabErrors?.list?.[itemIndex];
                                           const tabTouched = touched.content?.imageVideoTabsGallery?.[tabIndex] as any;
                                           const fieldTouched = tabTouched?.list?.[itemIndex];
-                                          
+
                                           const imageFieldName = `content.imageVideoTabsGallery.${tabIndex}.list.${itemIndex}.image`;
                                           const videoFieldName = `content.imageVideoTabsGallery.${tabIndex}.list.${itemIndex}.video`;
                                           const posterFieldName = `content.imageVideoTabsGallery.${tabIndex}.list.${itemIndex}.poster`;
@@ -1227,6 +1290,7 @@ const UpdatedPortfolioForm = () => {
                                                 {isImageTab ? (
                                                   <>
                                                     <FileUploadField
+                                                      key={`tab-${tabIndex}-image-${formResetKey}-${itemIndex}`}
                                                       label="Image URL"
                                                       name={imageFieldName}
                                                       value={itemData.image || ''}
@@ -1238,8 +1302,16 @@ const UpdatedPortfolioForm = () => {
                                                       placeholder="https://example.com/image.jpg or upload image"
                                                       accept="image/*"
                                                       type="image"
-                                                      onUpload={(url) => setFieldValue(imageFieldName, url)}
+                                                      onUpload={(url) => {
+                                                        setFieldValue(imageFieldName, url);
+                                                        setUploadingFields(prev => {
+                                                          const newSet = new Set(prev);
+                                                          newSet.delete(imageFieldName);
+                                                          return newSet;
+                                                        });
+                                                      }}
                                                       uploading={uploadingFields.has(imageFieldName)}
+                                                      resetKey={`${formResetKey}-${tabIndex}-${itemIndex}`}
                                                     />
                                                     <TextField
                                                       fullWidth
@@ -1249,8 +1321,8 @@ const UpdatedPortfolioForm = () => {
                                                       onChange={handleChange}
                                                       onBlur={handleBlur}
                                                       error={Boolean(hasMedia && fieldTouched?.alt && fieldError?.alt)}
-                                                      helperText={hasMedia ? 
-                                                        (fieldTouched?.alt && fieldError?.alt) : 
+                                                      helperText={hasMedia ?
+                                                        (fieldTouched?.alt && fieldError?.alt) :
                                                         "Optional (required if image is provided)"
                                                       }
                                                       disabled={loading}
@@ -1261,6 +1333,7 @@ const UpdatedPortfolioForm = () => {
                                                 ) : (
                                                   <>
                                                     <FileUploadField
+                                                      key={`tab-${tabIndex}-video-${formResetKey}-${itemIndex}`}
                                                       label="Video URL"
                                                       name={videoFieldName}
                                                       value={itemData.video || ''}
@@ -1272,26 +1345,43 @@ const UpdatedPortfolioForm = () => {
                                                       placeholder="https://example.com/video.mp4 or upload video"
                                                       accept="video/*"
                                                       type="video"
-                                                      onUpload={(url) => setFieldValue(videoFieldName, url)}
+                                                      onUpload={(url) => {
+                                                        setFieldValue(videoFieldName, url);
+                                                        setUploadingFields(prev => {
+                                                          const newSet = new Set(prev);
+                                                          newSet.delete(videoFieldName);
+                                                          return newSet;
+                                                        });
+                                                      }}
                                                       uploading={uploadingFields.has(videoFieldName)}
+                                                      resetKey={`${formResetKey}-${tabIndex}-${itemIndex}`}
                                                     />
                                                     <FileUploadField
+                                                      key={`tab-${tabIndex}-poster-${formResetKey}-${itemIndex}`}
                                                       label="Poster URL"
                                                       name={posterFieldName}
                                                       value={itemData.poster || ''}
                                                       onChange={handleChange}
                                                       onBlur={handleBlur}
                                                       error={Boolean(hasMedia && fieldTouched?.poster && fieldError?.poster)}
-                                                      helperText={hasMedia ? 
-                                                        (fieldTouched?.poster && fieldError?.poster) : 
+                                                      helperText={hasMedia ?
+                                                        (fieldTouched?.poster && fieldError?.poster) :
                                                         "Optional (required if video is provided)"
                                                       }
                                                       disabled={loading}
                                                       placeholder="https://example.com/poster.jpg or upload image"
                                                       accept="image/*"
                                                       type="image"
-                                                      onUpload={(url) => setFieldValue(posterFieldName, url)}
+                                                      onUpload={(url) => {
+                                                        setFieldValue(posterFieldName, url);
+                                                        setUploadingFields(prev => {
+                                                          const newSet = new Set(prev);
+                                                          newSet.delete(posterFieldName);
+                                                          return newSet;
+                                                        });
+                                                      }}
                                                       uploading={uploadingFields.has(posterFieldName)}
+                                                      resetKey={`${formResetKey}-${tabIndex}-${itemIndex}-poster`}
                                                     />
                                                   </>
                                                 )}
@@ -1380,11 +1470,11 @@ const UpdatedPortfolioForm = () => {
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                variant="contained" 
+              <Button
+                type="submit"
+                variant="contained"
                 size="large"
-                disabled={loading}
+                disabled={loading || success}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                 sx={{ px: 4 }}
               >
