@@ -308,7 +308,7 @@ const UpdateSEOBannersForm = () => {
         banner: values.banner,
       };
 
-      console.log("Updating SEO Banner in Supabase:", seoBannerData);
+      // console.log("Updating SEO Banner in Supabase:", seoBannerData);
 
       // Update in Supabase
       const { data, error: supabaseError } = await supabase
@@ -321,7 +321,7 @@ const UpdateSEOBannersForm = () => {
         throw new Error(supabaseError.message);
       }
 
-      console.log("SEO Banner updated successfully:", data);
+      // console.log("SEO Banner updated successfully:", data);
       setSuccess(true);
       
     } catch (err: any) {

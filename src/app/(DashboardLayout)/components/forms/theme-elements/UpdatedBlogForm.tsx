@@ -400,7 +400,7 @@ const UpdateBlogForm = () => {
         content: values.content,
       };
 
-      console.log("Updating blog in Supabase:", blogData);
+      // console.log("Updating blog in Supabase:", blogData);
 
       // Update in Supabase
       const { data, error: supabaseError } = await supabase
@@ -413,7 +413,7 @@ const UpdateBlogForm = () => {
         throw new Error(supabaseError.message);
       }
 
-      console.log("Blog updated successfully:", data);
+      // console.log("Blog updated successfully:", data);
       setSuccess(true);
       
     } catch (err: any) {

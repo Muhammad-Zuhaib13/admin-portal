@@ -552,7 +552,7 @@ const UpdatedPortfolioForm = () => {
         },
       };
 
-      console.log("Updating portfolio in Supabase:", portfolioData);
+      // console.log("Updating portfolio in Supabase:", portfolioData);
 
       // Update in Supabase
       const { data, error: supabaseError } = await supabase
@@ -565,7 +565,7 @@ const UpdatedPortfolioForm = () => {
         throw new Error(supabaseError.message);
       }
 
-      console.log("Portfolio updated successfully:", data);
+      // console.log("Portfolio updated successfully:", data);
       setSuccess(true);
 
     } catch (err: any) {

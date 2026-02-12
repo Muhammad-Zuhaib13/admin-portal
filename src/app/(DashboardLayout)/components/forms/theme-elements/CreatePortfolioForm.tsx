@@ -434,7 +434,7 @@ const CreatePortfolioForm = () => {
         },
       };
 
-      console.log("Submitting to Supabase:", portfolioData);
+      // console.log("Submitting to Supabase:", portfolioData);
 
       // Insert into Supabase
       const { data, error: supabaseError } = await supabase
@@ -446,7 +446,7 @@ const CreatePortfolioForm = () => {
         throw new Error(supabaseError.message);
       }
 
-      console.log("Portfolio created successfully:", data);
+      // console.log("Portfolio created successfully:", data);
       setSuccess(true);
 
       // Reset form after successful submission

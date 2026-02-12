@@ -233,7 +233,7 @@ const CreateSEOBannersForm = () => {
         banner: values.banner,
       };
 
-      console.log("Submitting to Supabase:", seoBannerData);
+      // console.log("Submitting to Supabase:", seoBannerData);
 
       // Insert into Supabase
       const { data, error: supabaseError } = await supabase

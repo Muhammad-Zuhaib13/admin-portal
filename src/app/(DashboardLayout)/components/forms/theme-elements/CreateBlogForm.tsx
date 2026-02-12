@@ -291,7 +291,7 @@ const CreateBlogForm = () => {
         content: values.content,
       };
 
-      console.log("Submitting to Supabase:", blogData);
+      // console.log("Submitting to Supabase:", blogData);
 
       // Insert into Supabase
       const { data, error: supabaseError } = await supabase

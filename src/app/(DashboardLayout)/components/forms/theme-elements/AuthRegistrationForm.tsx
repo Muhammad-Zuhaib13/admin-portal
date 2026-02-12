@@ -96,7 +96,7 @@ const AuthRegistrationForm = ({ subtext, subtitle }: AuthRegisterProps) => {
       }
 
       if (data.user) {
-        console.log("User registered successfully:", data.user);
+        // console.log("User registered successfully:", data.user);
         setSuccess(true);
         
         // Redirect to login page after successful registration
