@@ -53,12 +53,14 @@ const videoValidation = Yup.object().shape({
 
 // Card validation - all fields are required
 const cardValidation = Yup.object().shape({
+  cardTitle: Yup.string().required("Card Title is required"),
   ctaText: Yup.string().required("CTA Text is required"),
-  pageUrl: Yup.string().url("Must be a valid URL").required("Page URL is required"),
+  pageUrl: Yup.string().required("Page slug is required"),
   cardBackgroundImage: Yup.string().required("Background Image is required"),
 });
 
 // Validation Schema - UPDATED to include card validation
+// Validation Schema - UPDATED to make tabTitle conditional
 const validationSchema = Yup.object({
   seo: Yup.object({
     title: Yup.string().required("Required"),
@@ -89,7 +91,12 @@ const validationSchema = Yup.object({
     videoGallery: Yup.array().of(videoValidation).optional(),
     imageVideoTabsGallery: Yup.array().of(
       Yup.object({
-        tabTitle: Yup.string().required("Tab title is required"),
+        // Only validate tabTitle when imageVideoTabsGallery is actually selected
+        tabTitle: Yup.string().when('$key', {
+          is: 'imageVideoTabsGallery',
+          then: (schema: any) => schema.required("Tab title is required"),
+          otherwise: (schema: any) => schema.optional()
+        }),
         key: Yup.string().oneOf(["image", "video"]).required("Tab type is required"),
         list: Yup.array().of(
           Yup.lazy((value: any, context: any) => {
@@ -135,6 +142,7 @@ const initialValues = {
   key: "",
   content: {
     card: {
+      cardTitle: "",
       ctaText: "",
       pageUrl: "",
       cardBackgroundImage: ""
@@ -440,16 +448,16 @@ const CreatePortfolioForm = () => {
 
       console.log("Portfolio created successfully:", data);
       setSuccess(true);
-      
+
       // Reset form after successful submission
       resetForm();
-      
+
       // Clear uploading fields
       setUploadingFields(new Set());
-      
+
       // Reset active tab
       setActiveTab(0);
-      
+
       // Trigger a key change to reset file inputs
       setFormResetKey(Date.now());
 
@@ -497,7 +505,9 @@ const CreatePortfolioForm = () => {
         <Form>
           <Stack spacing={4} sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
             <Typography variant="h3" gutterBottom>Create Portfolio</Typography>
-            
+            {/* <pre style={{ color: "red", background: "#111", padding: 12 }}>
+              {JSON.stringify(errors, null, 2)}
+            </pre> */}
             {success && (
               <Alert
                 severity="success"
@@ -739,6 +749,18 @@ const CreatePortfolioForm = () => {
                   All fields in this section are required.
                 </Typography>
                 <Stack spacing={3}>
+                  <TextField
+                    label="Card Title *"
+                    name="content.card.cardTitle"
+                    value={values.content.card?.cardTitle || ''}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={Boolean(touched.content?.card?.ctaText && errors.content?.card?.cardTitle)}
+                    helperText={touched.content?.card?.ctaText && errors.content?.card?.cardTitle}
+                    fullWidth
+                    disabled={loading}
+                    placeholder="e.g., Artwork"
+                  />
                   <TextField
                     label="CTA Text *"
                     name="content.card.ctaText"
@@ -1194,7 +1216,7 @@ const CreatePortfolioForm = () => {
                                                       }
                                                       disabled={loading}
                                                       placeholder="Description of the image"
-                                                      size="small"
+
                                                     />
                                                   </>
                                                 ) : (

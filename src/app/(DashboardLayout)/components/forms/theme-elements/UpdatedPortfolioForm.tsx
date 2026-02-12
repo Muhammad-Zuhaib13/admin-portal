@@ -56,7 +56,8 @@ const videoValidation = Yup.object().shape({
 // Card validation - all fields are required
 const cardValidation = Yup.object().shape({
   ctaText: Yup.string().required("CTA Text is required"),
-  pageUrl: Yup.string().url("Must be a valid URL").required("Page URL is required"),
+  cardTitle: Yup.string().required("Card Title is required"),
+  pageUrl: Yup.string().required("Page slug is required"),
   cardBackgroundImage: Yup.string().required("Background Image is required"),
 });
 
@@ -91,7 +92,12 @@ const validationSchema = Yup.object({
     videoGallery: Yup.array().of(videoValidation).optional(),
     imageVideoTabsGallery: Yup.array().of(
       Yup.object({
-        tabTitle: Yup.string().required("Tab title is required"),
+        // Only validate tabTitle when imageVideoTabsGallery is actually selected
+        tabTitle: Yup.string().when('$key', {
+          is: 'imageVideoTabsGallery',
+          then: (schema: any) => schema.required("Tab title is required"),
+          otherwise: (schema: any) => schema.optional()
+        }),
         key: Yup.string().oneOf(["image", "video"]).required("Tab type is required"),
         list: Yup.array().of(
           Yup.lazy((value: any, context: any) => {
@@ -137,6 +143,7 @@ const emptyInitialValues = {
   key: "",
   content: {
     card: {
+      cardTitle:"",
       ctaText: "",
       pageUrl: "",
       cardBackgroundImage: ""
@@ -873,6 +880,18 @@ const UpdatedPortfolioForm = () => {
                 </Typography>
                 <Stack spacing={3}>
                   <TextField
+                    label="Card Title *"
+                    name="content.card.cardTitle"
+                    value={values.content.card?.cardTitle || ''}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={Boolean(touched.content?.card?.ctaText && errors.content?.card?.cardTitle)}
+                    helperText={touched.content?.card?.ctaText && errors.content?.card?.cardTitle}
+                    fullWidth
+                    disabled={loading}
+                    placeholder="e.g., Artwork"
+                  />
+                  <TextField
                     label="CTA Text *"
                     name="content.card.ctaText"
                     value={values.content.card?.ctaText || ''}
@@ -1327,7 +1346,7 @@ const UpdatedPortfolioForm = () => {
                                                       }
                                                       disabled={loading}
                                                       placeholder="Description of the image"
-                                                      size="small"
+
                                                     />
                                                   </>
                                                 ) : (
