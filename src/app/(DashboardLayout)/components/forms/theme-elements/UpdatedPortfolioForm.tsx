@@ -28,7 +28,8 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { supabase } from "@/app/lib/supabase";
 import { useParams, useRouter } from "next/navigation";
-
+import SuccessModal from "./SuccessModal";
+import ErrorModal from "./ErrorModal";
 // Cloudinary configuration
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -143,7 +144,7 @@ const emptyInitialValues = {
   key: "",
   content: {
     card: {
-      cardTitle:"",
+      cardTitle: "",
       ctaText: "",
       pageUrl: "",
       cardBackgroundImage: ""
@@ -416,7 +417,8 @@ const UpdatedPortfolioForm = () => {
   const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
   const [initialValues, setInitialValues] = useState(emptyInitialValues);
   const [formResetKey, setFormResetKey] = useState(Date.now());
-
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
   // Fetch portfolio data when component mounts
   useEffect(() => {
     const fetchPortfolioData = async () => {
@@ -515,6 +517,7 @@ const UpdatedPortfolioForm = () => {
       } catch (err: any) {
         console.error("Error fetching portfolio:", err);
         setError(err.message || "Failed to load portfolio data");
+        setErrorModalOpen(true);
       } finally {
         setFetching(false);
       }
@@ -526,6 +529,7 @@ const UpdatedPortfolioForm = () => {
   const handleSubmit = async (values: typeof emptyInitialValues, { setErrors }: any) => {
     if (!portfolioId) {
       setError("Portfolio ID is missing");
+      setErrorModalOpen(true);
       return;
     }
 
@@ -567,13 +571,26 @@ const UpdatedPortfolioForm = () => {
 
       // console.log("Portfolio updated successfully:", data);
       setSuccess(true);
+      setSuccessModalOpen(true);
 
     } catch (err: any) {
       console.error("Error updating portfolio:", err);
       setError(err.message || "Failed to update portfolio");
+      setErrorModalOpen(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseSuccessModal = () => {
+    setSuccessModalOpen(false);
+    setSuccess(false);
+    router.push("/created-portfolios");
+  };
+
+  const handleCloseErrorModal = () => {
+    setErrorModalOpen(false);
+    setError(null);
   };
 
   const handleGoBack = () => {
@@ -1501,6 +1518,20 @@ const UpdatedPortfolioForm = () => {
               </Button>
             </Stack>
           </Stack>
+          <SuccessModal
+            open={successModalOpen}
+            onClose={handleCloseSuccessModal}
+            message="Portfolio updated successfully!"
+            buttonText="View All Portfolio"
+            onButtonClick={handleCloseSuccessModal}
+          />
+
+          {/* Error Modal */}
+          <ErrorModal
+            open={errorModalOpen}
+            onClose={handleCloseErrorModal}
+            message={error || "An error occurred"}
+          />
         </Form>
       )}
     </Formik>

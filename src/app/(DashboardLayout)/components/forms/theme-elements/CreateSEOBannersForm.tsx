@@ -18,7 +18,9 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { supabase } from "@/app/lib/supabase";
-
+import SuccessModal from "./SuccessModal";
+import ErrorModal from "./ErrorModal";
+import { useParams, useRouter } from "next/navigation";
 // Cloudinary configuration
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -215,13 +217,16 @@ const FileUploadField = ({
 };
 
 const CreateSEOBannersForm = () => {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
   const [formResetKey, setFormResetKey] = useState(Date.now());
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
 
-  const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
+ const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -246,6 +251,7 @@ const CreateSEOBannersForm = () => {
       }
 
       setSuccess(true);
+      setSuccessModalOpen(true);
 
       // Reset form after successful submission
       resetForm();
@@ -259,9 +265,22 @@ const CreateSEOBannersForm = () => {
     } catch (err: any) {
       console.error("Error creating SEO Banner:", err);
       setError(err.message || "Failed to create SEO Banner");
+      setErrorModalOpen(true);
     } finally {
       setLoading(false);
     }
+  };
+
+
+  const handleCloseSuccessModal = () => {
+    setSuccessModalOpen(false);
+    setSuccess(false);
+    router.push("/created-seo-banners");
+  };
+
+  const handleCloseErrorModal = () => {
+    setErrorModalOpen(false);
+    setError(null);
   };
 
   const handleCreateAnother = (resetForm: any) => {
@@ -554,6 +573,20 @@ const CreateSEOBannersForm = () => {
               {loading ? "Creating..." : "Create SEO Banner"}
             </Button>
           </Stack>
+          <SuccessModal
+            open={successModalOpen}
+            onClose={handleCloseSuccessModal}
+            message="SEO Banner created successfully!"
+            buttonText="View All SEO Banners"
+            onButtonClick={handleCloseSuccessModal}
+          />
+
+          {/* Error Modal */}
+          <ErrorModal
+            open={errorModalOpen}
+            onClose={handleCloseErrorModal}
+            message={error || "An error occurred"}
+          />
         </Form>
       )}
     </Formik>

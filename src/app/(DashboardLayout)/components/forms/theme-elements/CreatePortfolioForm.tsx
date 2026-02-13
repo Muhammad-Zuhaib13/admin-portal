@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   TextField,
@@ -26,7 +26,9 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { supabase } from "@/app/lib/supabase";
-
+import { useParams, useRouter } from "next/navigation";
+import SuccessModal from "./SuccessModal";
+import ErrorModal from "./ErrorModal";
 // Cloudinary configuration
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -334,6 +336,7 @@ const FileUploadField = ({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [localUploading, setLocalUploading] = React.useState(false);
 
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -409,8 +412,10 @@ const CreatePortfolioForm = () => {
   const [activeTab, setActiveTab] = React.useState(0);
   const [uploadingFields, setUploadingFields] = React.useState<Set<string>>(new Set());
   const [formResetKey, setFormResetKey] = React.useState(Date.now());
-
-  const handleSubmit = async (values: typeof initialValues, { setErrors, resetForm }: any) => {
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const router = useRouter();
+   const handleSubmit = async (values: typeof initialValues, { setErrors, resetForm }: any) => {
     // Run custom validation for gallery-specific rules
     const validationErrors = validateForm(values);
     if (Object.keys(validationErrors).length > 0) {
@@ -448,6 +453,7 @@ const CreatePortfolioForm = () => {
 
       // console.log("Portfolio created successfully:", data);
       setSuccess(true);
+      setSuccessModalOpen(true);
 
       // Reset form after successful submission
       resetForm();
@@ -464,9 +470,21 @@ const CreatePortfolioForm = () => {
     } catch (err: any) {
       console.error("Error creating portfolio:", err);
       setError(err.message || "Failed to create portfolio");
+      setErrorModalOpen(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseSuccessModal = () => {
+    setSuccessModalOpen(false);
+    setSuccess(false);
+    router.push("/created-portfolios");
+  };
+
+  const handleCloseErrorModal = () => {
+    setErrorModalOpen(false);
+    setError(null);
   };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -1362,6 +1380,21 @@ const CreatePortfolioForm = () => {
               {loading ? "Creating..." : "Create Portfolio"}
             </Button>
           </Stack>
+          {/* Success Modal */}
+          <SuccessModal
+            open={successModalOpen}
+            onClose={handleCloseSuccessModal}
+            message="Portfolio created successfully!"
+            buttonText="View All Portfolio"
+            onButtonClick={handleCloseSuccessModal}
+          />
+
+          {/* Error Modal */}
+          <ErrorModal
+            open={errorModalOpen}
+            onClose={handleCloseErrorModal}
+            message={error || "An error occurred"}
+          />
         </Form>
       )}
     </Formik>

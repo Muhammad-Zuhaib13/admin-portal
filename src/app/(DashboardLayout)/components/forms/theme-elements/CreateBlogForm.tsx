@@ -20,7 +20,9 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { supabase } from "@/app/lib/supabase";
-
+import { useParams, useRouter } from "next/navigation";
+import SuccessModal from "./SuccessModal";
+import ErrorModal from "./ErrorModal";
 // Cloudinary configuration
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -277,7 +279,9 @@ const CreateBlogForm = () => {
   const [success, setSuccess] = useState(false);
   const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
   const [formResetKey, setFormResetKey] = useState(Date.now());
-
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const router = useRouter();
   const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
     setLoading(true);
     setError(null);
@@ -305,22 +309,35 @@ const CreateBlogForm = () => {
 
       console.log("Blog created successfully:", data);
       setSuccess(true);
-      
+      setSuccessModalOpen(true);
+
       // Reset form after successful submission
       resetForm();
-      
+
       // Clear uploading fields
       setUploadingFields(new Set());
-      
+
       // Trigger a key change to reset file inputs
       setFormResetKey(Date.now());
 
     } catch (err: any) {
       console.error("Error creating blog:", err);
       setError(err.message || "Failed to create blog");
+      setErrorModalOpen(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseSuccessModal = () => {
+    setSuccessModalOpen(false);
+    setSuccess(false);
+    router.push("/created-blogs");
+  };
+
+  const handleCloseErrorModal = () => {
+    setErrorModalOpen(false);
+    setError(null);
   };
 
   const handleCreateAnother = (resetForm: any) => {
@@ -351,7 +368,7 @@ const CreateBlogForm = () => {
         <Form>
           <Stack spacing={4} sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
             <Typography variant="h3" gutterBottom>Create Blog</Typography>
-            
+
             {/* Status Messages */}
             {success && (
               <Alert
@@ -902,6 +919,20 @@ const CreateBlogForm = () => {
               {loading ? "Creating..." : "Create Blog"}
             </Button>
           </Stack>
+          <SuccessModal
+            open={successModalOpen}
+            onClose={handleCloseSuccessModal}
+            message="Blog created successfully!"
+            buttonText="View All Blogs"
+            onButtonClick={handleCloseSuccessModal}
+          />
+
+          {/* Error Modal */}
+          <ErrorModal
+            open={errorModalOpen}
+            onClose={handleCloseErrorModal}
+            message={error || "An error occurred"}
+          />
         </Form>
       )}
     </Formik>

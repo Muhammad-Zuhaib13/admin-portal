@@ -22,6 +22,8 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { supabase } from "@/app/lib/supabase";
 import { useParams, useRouter } from "next/navigation";
+import SuccessModal from "./SuccessModal";
+import ErrorModal from "./ErrorModal";
 
 // Cloudinary configuration
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
@@ -75,8 +77,8 @@ const validationSchema = Yup.object({
       list: Yup.array()
         .of(
           Yup.object({
-            text: Yup.string().required("Link text is required"),
-            href: Yup.string().url("Must be a valid URL").required("URL is required"),
+            text: Yup.string(),
+            href: Yup.string().url("Must be a valid URL"),
           })
         )
         .min(1, "At least one URL is required"),
@@ -138,12 +140,12 @@ const uploadToCloudinary = async (file: File, type: 'image' | 'video') => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  
+
   // Optional: Add folder for organization
   formData.append('folder', 'blogs');
-  
+
   let cloudinaryUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/`;
-  
+
   if (type === 'image') {
     cloudinaryUrl += 'image/upload';
   } else if (type === 'video') {
@@ -172,14 +174,14 @@ const uploadToCloudinary = async (file: File, type: 'image' | 'video') => {
 };
 
 // File upload field component for Cloudinary
-const FileUploadField = ({ 
-  label, 
-  name, 
-  value, 
-  onChange, 
-  onBlur, 
-  error, 
-  helperText, 
+const FileUploadField = ({
+  label,
+  name,
+  value,
+  onChange,
+  onBlur,
+  error,
+  helperText,
   disabled,
   placeholder,
   accept,
@@ -278,23 +280,25 @@ const UpdateBlogForm = () => {
   const params = useParams();
   const router = useRouter();
   const blogId = params.id;
-  
+
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
   const [initialValues, setInitialValues] = useState(emptyInitialValues);
   const [formResetKey, setFormResetKey] = useState(Date.now());
 
-  // Fetch blog data when component mounts
+   // Fetch blog data when component mounts
   useEffect(() => {
     const fetchBlogData = async () => {
       if (!blogId) return;
-      
+
       setFetching(true);
       setError(null);
-      
+
       try {
         const { data, error: supabaseError } = await supabase
           .from("blogs")
@@ -341,39 +345,40 @@ const UpdateBlogForm = () => {
             title: data.content?.title || "",
             thumbImage: data.content?.thumbImage || "",
             createdDate: data.content?.createdDate || new Date().toISOString().split('T')[0],
-            description: data.content?.description?.length 
-              ? data.content.description.map((item: any) => ({ 
-                  text: item.text || "",
-                  id: item.id || undefined 
-                }))
+            description: data.content?.description?.length
+              ? data.content.description.map((item: any) => ({
+                text: item.text || "",
+                id: item.id || undefined
+              }))
               : [{ text: "" }],
             tags: {
-              list: data.content?.tags?.list?.length 
-                ? data.content.tags.list.map((item: any) => ({ 
-                    text: item.text || "",
-                    id: item.id || undefined 
-                  }))
+              list: data.content?.tags?.list?.length
+                ? data.content.tags.list.map((item: any) => ({
+                  text: item.text || "",
+                  id: item.id || undefined
+                }))
                 : [{ text: "" }],
               text: data.content?.tags?.text || "Tags",
             },
             urls: {
-              list: data.content?.urls?.list?.length 
-                ? data.content.urls.list.map((item: any) => ({ 
-                    text: item.text || "",
-                    href: item.href || "",
-                    id: item.id || undefined 
-                  }))
+              list: data.content?.urls?.list?.length
+                ? data.content.urls.list.map((item: any) => ({
+                  text: item.text || "",
+                  href: item.href || "",
+                  id: item.id || undefined
+                }))
                 : [{ text: "", href: "" }],
               text: data.content?.urls?.text || "Urls",
             },
           },
         };
-         
+
         setInitialValues(transformedData);
         setFormResetKey(Date.now());
       } catch (err: any) {
         console.error("Error fetching blog:", err);
         setError(err.message || "Failed to load blog data");
+        setErrorModalOpen(true);
       } finally {
         setFetching(false);
       }
@@ -381,10 +386,11 @@ const UpdateBlogForm = () => {
 
     fetchBlogData();
   }, [blogId]);
-  
+
   const handleSubmit = async (values: typeof emptyInitialValues) => {
     if (!blogId) {
       setError("Blog ID is missing");
+      setErrorModalOpen(true);
       return;
     }
 
@@ -415,13 +421,26 @@ const UpdateBlogForm = () => {
 
       // console.log("Blog updated successfully:", data);
       setSuccess(true);
-      
+      setSuccessModalOpen(true);
+
     } catch (err: any) {
       console.error("Error updating blog:", err);
       setError(err.message || "Failed to update blog");
+      setErrorModalOpen(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseSuccessModal = () => {
+    setSuccessModalOpen(false);
+    setSuccess(false);
+    router.push("/created-blogs");
+  };
+
+  const handleCloseErrorModal = () => {
+    setErrorModalOpen(false);
+    setError(null);
   };
 
   const handleGoBack = () => {
@@ -460,7 +479,7 @@ const UpdateBlogForm = () => {
       {({ values, handleChange, handleBlur, touched, errors, setFieldValue }) => (
         <Form>
           <Stack spacing={4} sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
-            
+
             {/* Header with Back Button */}
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Button
@@ -477,12 +496,12 @@ const UpdateBlogForm = () => {
 
             {/* Status Messages */}
             {success && (
-              <Alert 
+              <Alert
                 severity="success"
                 action={
-                  <Button 
-                    color="inherit" 
-                    size="small" 
+                  <Button
+                    color="inherit"
+                    size="small"
                     onClick={() => {
                       setSuccess(false);
                       router.push("/created-blogs");
@@ -518,7 +537,7 @@ const UpdateBlogForm = () => {
                     fullWidth
                     disabled={loading}
                   />
-                  
+
                   <TextField
                     label="SEO Description"
                     name="seo.description"
@@ -532,7 +551,7 @@ const UpdateBlogForm = () => {
                     fullWidth
                     disabled={loading}
                   />
-                  
+
                   <TextField
                     label="Keywords"
                     name="seo.keywords"
@@ -545,7 +564,7 @@ const UpdateBlogForm = () => {
                     disabled={loading}
                     placeholder="keyword1, keyword2, keyword3"
                   />
-                  
+
                   <TextField
                     label="Canonical URL"
                     name="seo.canonicalURL"
@@ -646,7 +665,7 @@ const UpdateBlogForm = () => {
 
             {/* Banner Section */}
             <Card>
-              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}} >
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: '18px' }} >
                 <Typography variant="h6" gutterBottom>Banner</Typography>
                 <Stack spacing={3}>
                   <TextField
@@ -660,7 +679,7 @@ const UpdateBlogForm = () => {
                     fullWidth
                     disabled={loading}
                   />
-                  
+
                   <TextField
                     label="Banner Description"
                     name="banner.description"
@@ -680,7 +699,7 @@ const UpdateBlogForm = () => {
                     fullWidth
                     disabled={loading}
                   />
-                  
+
                   {/* Video URL with Cloudinary upload */}
                   <FileUploadField
                     key={`video-${formResetKey}`}
@@ -738,7 +757,7 @@ const UpdateBlogForm = () => {
 
             {/* Content Section */}
             <Card>
-              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}}>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 <Typography variant="h6" gutterBottom>Content</Typography>
                 <Stack spacing={3}>
                   <TextField
@@ -752,7 +771,7 @@ const UpdateBlogForm = () => {
                     fullWidth
                     disabled={loading}
                   />
-                  
+
                   {/* Thumbnail Image URL with Cloudinary upload */}
                   <FileUploadField
                     key={`thumbnail-${formResetKey}`}
@@ -778,7 +797,7 @@ const UpdateBlogForm = () => {
                     uploading={uploadingFields.has("content.thumbImage")}
                     resetKey={formResetKey}
                   />
-                  
+
                   <TextField
                     label="Created Date"
                     name="content.createdDate"
@@ -794,7 +813,7 @@ const UpdateBlogForm = () => {
                       inputLabel: { shrink: true }
                     }}
                   />
-                  
+
                   {/* CTA */}
                   <Box>
                     <Typography variant="subtitle1" gutterBottom>Call to Action (CTA)</Typography>
@@ -838,7 +857,7 @@ const UpdateBlogForm = () => {
                             const fieldError = errors.content?.description?.[index];
                             const fieldTouched = touched.content?.description?.[index];
                             const errorMessage = typeof fieldError === 'object' && fieldError?.text ? fieldError.text : '';
-                            
+
                             return (
                               <Stack direction="row" spacing={1} key={index} alignItems="flex-start">
                                 <TextField
@@ -854,7 +873,7 @@ const UpdateBlogForm = () => {
                                   disabled={loading}
                                   placeholder={`Paragraph ${index + 1}`}
                                 />
-                                <IconButton 
+                                <IconButton
                                   onClick={() => remove(index)}
                                   disabled={loading || values.content.description.length <= 1}
                                   sx={{ mt: 1 }}
@@ -898,7 +917,7 @@ const UpdateBlogForm = () => {
                             const fieldError = errors.content?.tags?.list?.[index];
                             const fieldTouched = touched.content?.tags?.list?.[index];
                             const errorMessage = typeof fieldError === 'object' && fieldError?.text ? fieldError.text : '';
-                            
+
                             return (
                               <Stack direction="row" spacing={1} key={index} alignItems="flex-start">
                                 <TextField
@@ -912,7 +931,7 @@ const UpdateBlogForm = () => {
                                   disabled={loading}
                                   placeholder={`Tag ${index + 1}`}
                                 />
-                                <IconButton 
+                                <IconButton
                                   onClick={() => remove(index)}
                                   disabled={loading || values.content.tags.list.length <= 1}
                                   sx={{ mt: 1 }}
@@ -957,7 +976,7 @@ const UpdateBlogForm = () => {
                             const fieldTouched = touched.content?.urls?.list?.[index];
                             const textError = typeof fieldError === 'object' && fieldError?.text ? fieldError.text : '';
                             const hrefError = typeof fieldError === 'object' && fieldError?.href ? fieldError.href : '';
-                            
+
                             return (
                               <Stack spacing={1} key={index}>
                                 <Stack direction="row" spacing={1} alignItems="flex-start">
@@ -983,7 +1002,7 @@ const UpdateBlogForm = () => {
                                     disabled={loading}
                                     placeholder="https://example.com"
                                   />
-                                  <IconButton 
+                                  <IconButton
                                     onClick={() => remove(index)}
                                     disabled={loading || values.content.urls.list.length <= 1}
                                     sx={{ mt: 1 }}
@@ -1025,9 +1044,9 @@ const UpdateBlogForm = () => {
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                variant="contained" 
+              <Button
+                type="submit"
+                variant="contained"
                 size="large"
                 disabled={loading || success}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
@@ -1037,6 +1056,20 @@ const UpdateBlogForm = () => {
               </Button>
             </Stack>
           </Stack>
+          <SuccessModal
+            open={successModalOpen}
+            onClose={handleCloseSuccessModal}
+            message="Blog updated successfully!"
+            buttonText="View All Blogs"
+            onButtonClick={handleCloseSuccessModal}
+          />
+
+          {/* Error Modal */}
+          <ErrorModal
+            open={errorModalOpen}
+            onClose={handleCloseErrorModal}
+            message={error || "An error occurred"}
+          />
         </Form>
       )}
     </Formik>

@@ -19,7 +19,8 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { supabase } from "@/app/lib/supabase";
 import { useParams, useRouter } from "next/navigation";
-
+import SuccessModal from "./SuccessModal";
+import ErrorModal from "./ErrorModal";
 // Cloudinary configuration
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -80,12 +81,12 @@ const uploadToCloudinary = async (file: File, type: 'image' | 'video') => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  
+
   // Optional: Add folder for organization
   formData.append('folder', 'seo_banners');
-  
+
   let cloudinaryUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/`;
-  
+
   if (type === 'image') {
     cloudinaryUrl += 'image/upload';
   } else if (type === 'video') {
@@ -114,14 +115,14 @@ const uploadToCloudinary = async (file: File, type: 'image' | 'video') => {
 };
 
 // File upload field component for Cloudinary
-const FileUploadField = ({ 
-  label, 
-  name, 
-  value, 
-  onChange, 
-  onBlur, 
-  error, 
-  helperText, 
+const FileUploadField = ({
+  label,
+  name,
+  value,
+  onChange,
+  onBlur,
+  error,
+  helperText,
   disabled,
   placeholder,
   accept,
@@ -220,11 +221,12 @@ const UpdateSEOBannersForm = () => {
   const params = useParams();
   const router = useRouter();
   const bannerId = params.id;
-  
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
   const [initialValues, setInitialValues] = useState(emptyInitialValues);
   const [formResetKey, setFormResetKey] = useState(Date.now());
@@ -283,6 +285,7 @@ const UpdateSEOBannersForm = () => {
       } catch (err: any) {
         console.error("Error fetching SEO Banner:", err);
         setError(err.message || "Failed to load SEO Banner data");
+        setErrorModalOpen(true);
       } finally {
         setFetching(false);
       }
@@ -294,6 +297,7 @@ const UpdateSEOBannersForm = () => {
   const handleSubmit = async (values: typeof emptyInitialValues) => {
     if (!bannerId) {
       setError("SEO Banner ID is missing");
+      setErrorModalOpen(true);
       return;
     }
 
@@ -323,10 +327,12 @@ const UpdateSEOBannersForm = () => {
 
       // console.log("SEO Banner updated successfully:", data);
       setSuccess(true);
+      setSuccessModalOpen(true);
       
     } catch (err: any) {
       console.error("Error updating SEO Banner:", err);
       setError(err.message || "Failed to update SEO Banner");
+      setErrorModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -343,6 +349,17 @@ const UpdateSEOBannersForm = () => {
       newSet.delete(fieldName);
       return newSet;
     });
+  };
+
+  const handleCloseSuccessModal = () => {
+    setSuccessModalOpen(false);
+    setSuccess(false);
+    router.push("/created-seo-banners");
+  };
+
+  const handleCloseErrorModal = () => {
+    setErrorModalOpen(false);
+    setError(null);
   };
 
   if (fetching) {
@@ -368,7 +385,7 @@ const UpdateSEOBannersForm = () => {
       {({ values, handleChange, handleBlur, touched, errors, resetForm, setFieldValue }) => (
         <Form>
           <Stack spacing={4} sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
-            
+
             {/* Header with Back Button */}
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Button
@@ -385,12 +402,12 @@ const UpdateSEOBannersForm = () => {
 
             {/* Status Messages */}
             {success && (
-              <Alert 
+              <Alert
                 severity="success"
                 action={
-                  <Button 
-                    color="inherit" 
-                    size="small" 
+                  <Button
+                    color="inherit"
+                    size="small"
                     onClick={() => {
                       setSuccess(false);
                       router.push("/created-seo-banners");
@@ -412,7 +429,7 @@ const UpdateSEOBannersForm = () => {
 
             {/* SEO Section */}
             <Card>
-              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}}>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 <Typography variant="h6" gutterBottom>SEO Settings</Typography>
                 <Stack spacing={3}>
                   <TextField
@@ -426,7 +443,7 @@ const UpdateSEOBannersForm = () => {
                     fullWidth
                     disabled={loading}
                   />
-                  
+
                   <TextField
                     label="SEO Description"
                     name="seo.description"
@@ -440,7 +457,7 @@ const UpdateSEOBannersForm = () => {
                     fullWidth
                     disabled={loading}
                   />
-                  
+
                   <TextField
                     label="Keywords"
                     name="seo.keywords"
@@ -453,7 +470,7 @@ const UpdateSEOBannersForm = () => {
                     disabled={loading}
                     placeholder="keyword1, keyword2, keyword3"
                   />
-                  
+
                   <TextField
                     label="Canonical URL"
                     name="seo.canonicalURL"
@@ -554,7 +571,7 @@ const UpdateSEOBannersForm = () => {
 
             {/* Banner Section */}
             <Card>
-              <CardContent sx={{display:'flex', flexDirection:'column', gap:'18px'}}>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 <Typography variant="h6" gutterBottom>Banner</Typography>
                 <Stack spacing={3}>
                   <TextField
@@ -568,7 +585,7 @@ const UpdateSEOBannersForm = () => {
                     fullWidth
                     disabled={loading}
                   />
-                  
+
                   <TextField
                     label="Banner Description"
                     name="banner.description"
@@ -588,7 +605,7 @@ const UpdateSEOBannersForm = () => {
                     fullWidth
                     disabled={loading}
                   />
-                  
+
                   {/* Video URL with Cloudinary upload */}
                   <FileUploadField
                     key={`video-${formResetKey}`} // Fix: Add key for reset
@@ -653,9 +670,9 @@ const UpdateSEOBannersForm = () => {
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                variant="contained" 
+              <Button
+                type="submit"
+                variant="contained"
                 size="large"
                 disabled={loading || success}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
@@ -665,6 +682,21 @@ const UpdateSEOBannersForm = () => {
               </Button>
             </Stack>
           </Stack>
+
+          <SuccessModal
+            open={successModalOpen}
+            onClose={handleCloseSuccessModal}
+            message="SEO Banner updated successfully!"
+            buttonText="View All SEO Banners"
+            onButtonClick={handleCloseSuccessModal}
+          />
+
+          {/* Error Modal */}
+          <ErrorModal
+            open={errorModalOpen}
+            onClose={handleCloseErrorModal}
+            message={error || "An error occurred"}
+          />
         </Form>
       )}
     </Formik>
